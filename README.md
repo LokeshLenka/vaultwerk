@@ -1,75 +1,43 @@
-# React + TypeScript + Vite
+# valutWerk
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> The developer memory system for tools.
 
-Currently, two official plugins are available:
+Save, organize, search, and rediscover developer tools before they disappear into the browser bookmark graveyard.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Status](https://img.shields.io/badge/status-MVP-orange)
+![Built With](https://img.shields.io/badge/built%20with-React%2019%20%7C%20TypeScript-black)
 
-## React Compiler
+---
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Why valutWerk?
 
-Note: This will impact Vite dev & build performances.
+Every developer has done this:
 
-## Expanding the ESLint configuration
+1. Discover a useful tool.
+2. Save it as a browser bookmark.
+3. Forget it exists.
+4. Search Google for the exact same tool two weeks later.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Bookmarks were never designed for modern developer workflows.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**valutWerk** is a developer-first memory system that helps you:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Save tools in seconds
+- Automatically enrich metadata
+- Organize by categories and tags
+- Build curated tool collections
+- Rediscover tools when you actually need them
+- Share tool stacks with the community
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Think of it as:
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+> **GitHub for developer tool stacks**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## License
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+MIT License
+
+---
+
+Built for developers who are tired of rediscovering the same tools for the fifth time because browser bookmarks have all the organizational power of a junk drawer.
