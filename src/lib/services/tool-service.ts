@@ -1,73 +1,156 @@
-import { db, normalizeUrl } from "../db";
-import type { ToolCategory, ToolSource, ToolType } from "../enums";
-import { createToolRecord } from "../factories/ToolFactory";
-import {
-  findToolByNormalizedUrl,
-  getFavoriteTools,
-  getForgottenTools,
-  getRecentTools,
-  getRelatedTools,
-  searchTools,
-} from "../queries/queries";
+/**
+ * Tool service for VaultWerk Phase 1.
+ *
+ * This module owns the core CRUD operations for saved tools:
+ * - create
+ * - read
+ * - update
+ * - delete
+ * - favorite toggle
+ * - mark as used
+ *
+ * It also handles URL normalization and duplicate prevention.
+ */
+
+import { db } from "../db";
+import { normalizeUrl } from "../helpers/nomalize-url";
+import { findToolByNormalizedUrl } from "../queries/queries";
 import type { ToolRecord } from "../types/tool";
 
+/**
+ * Input used to create a new tool in the local VaultWerk library.
+ *
+ * `url` is required because the service derives:
+ * - normalizedUrl
+ * - domain
+ *
+ * Optional fields are designed for a quick-save workflow:
+ * the user can save first and enrich metadata later.
+ */
 export type CreateToolInput = {
-  id: string;
+  id?: string;
   name: string;
   url: string;
-  category?: ToolCategory;
-  toolType?: ToolType;
-  source?: ToolSource;
+  category?: string | null;
+  description?: string | null;
+  notes?: string | null;
+  tags?: string[];
+  isFavorite?: boolean;
 };
 
-export type UpdateToolInput = Partial<
-  Omit<ToolRecord, "id" | "createdAt" | "normalizedUrl" | "domain">
->;
-
-export async function createTool(input: CreateToolInput) {
-  const normalized = normalizeUrl(input.url);
-  const existing = await findToolByNormalizedUrl(normalized.normalizedUrl);
-
-  if (existing) {
-    return { tool: existing, created: false, reason: "duplicate" as const };
-  }
-
-  const record = createToolRecord({
-    id: input.id,
-    name: input.name,
-    url: normalized.url,
-    normalizedUrl: normalized.normalizedUrl,
-    domain: normalized.domain,
-    category: input.category,
-    toolType: input.toolType,
-    source: input.source,
-  });
-
-  await db.tools.add(record);
-
-  return { tool: record, created: true as const };
+/**
+ * Returns all tools ordered from newest to oldest by creation date.
+ *
+ * Used by the main library view where recency helps rediscovery.
+ */
+export async function listTools() {
+  return db.tools.orderBy("createdAt").reverse().toArray();
 }
 
+/**
+ * Fetches a single tool by its unique id.
+ *
+ * Returns `undefined` if the tool does not exist.
+ */
 export async function getToolById(id: string) {
   return db.tools.get(id);
 }
 
-export async function listTools() {
-  return db.tools
-    .filter((tool) => tool.archivedAt === null)
-    .sortBy("createdAt")
-    .then((rows) => rows.reverse());
+/**
+ * Creates a new tool record.
+ *
+ * Behavior:
+ * - normalizes the incoming URL
+ * - checks for duplicates using normalizedUrl
+ * - returns the existing tool instead of creating a duplicate
+ * - fills derived fields like `domain`
+ *
+ * Return shape:
+ * - `{ tool, created: true }` when inserted
+ * - `{ tool, created: false, reason: "duplicate" }` when a match already exists
+ */
+export async function createTool(input: CreateToolInput) {
+  const normalized = normalizeUrl(input.url);
+
+  const existing = await findToolByNormalizedUrl(normalized.normalizedUrl);
+
+  if (existing) {
+    return {
+      tool: existing,
+      created: false,
+      reason: "duplicate" as const,
+    };
+  }
+
+  const now = new Date().toISOString();
+
+  const record: ToolRecord = {
+    id: input.id ?? crypto.randomUUID(),
+
+    name: input.name,
+
+    url: normalized.url,
+    normalizedUrl: normalized.normalizedUrl,
+    domain: normalized.domain,
+
+    category: input.category ?? null,
+
+    tags: input.tags ?? [],
+
+    description: input.description ?? null,
+    notes: input.notes ?? null,
+
+    isFavorite: input.isFavorite ?? false,
+
+    createdAt: now,
+    updatedAt: now,
+    lastUsedAt: null,
+  };
+
+  await db.tools.add(record);
+
+  return {
+    tool: record,
+    created: true as const,
+  };
 }
 
+/**
+ * Fields that may be updated after creation.
+ *
+ * The following fields are intentionally excluded:
+ * - id
+ * - createdAt
+ * - normalizedUrl
+ * - domain
+ *
+ * `normalizedUrl` and `domain` are derived automatically from `url`
+ * when the URL changes.
+ */
+export type UpdateToolInput = Partial<
+  Omit<ToolRecord, "id" | "createdAt" | "normalizedUrl" | "domain">
+>;
+
+/**
+ * Updates an existing tool.
+ *
+ * Behavior:
+ * - returns `null` if the tool does not exist
+ * - re-normalizes URL-related fields when `url` changes
+ * - always refreshes `updatedAt`
+ */
 export async function updateTool(id: string, updates: UpdateToolInput) {
   const current = await db.tools.get(id);
+
   if (!current) return null;
 
   const nextUrl = updates.url ?? current.url;
+
   let normalizedPatch: Partial<ToolRecord> = {};
 
   if (nextUrl !== current.url) {
     const normalized = normalizeUrl(nextUrl);
+
     normalizedPatch = {
       url: normalized.url,
       normalizedUrl: normalized.normalizedUrl,
@@ -80,116 +163,68 @@ export async function updateTool(id: string, updates: UpdateToolInput) {
     ...updates,
     ...normalizedPatch,
     updatedAt: new Date().toISOString(),
-    version: current.version + 1,
-    syncState: current.syncState === "synced" ? "modified" : current.syncState,
   };
 
   await db.tools.put(nextRecord);
+
   return nextRecord;
 }
 
+/**
+ * Permanently deletes a tool by id.
+ *
+ * This is a hard delete from the local database.
+ */
+export async function deleteTool(id: string) {
+  await db.tools.delete(id);
+}
+
+/**
+ * Toggles the favorite state of a tool.
+ *
+ * Useful for lightweight bookmarking inside the library.
+ * Returns the updated record, or `null` if the tool does not exist.
+ */
 export async function toggleFavoriteTool(id: string) {
   const current = await db.tools.get(id);
+
   if (!current) return null;
 
-  const next = {
+  const next: ToolRecord = {
     ...current,
     isFavorite: !current.isFavorite,
     updatedAt: new Date().toISOString(),
-    version: current.version + 1,
-    syncState: current.syncState === "synced" ? "modified" : current.syncState,
   };
 
   await db.tools.put(next);
+
   return next;
 }
 
+/**
+ * Marks a tool as used "now".
+ *
+ * Updates:
+ * - lastUsedAt
+ * - updatedAt
+ *
+ * This supports future rediscovery features like
+ * "recently revisited" or "forgotten tools".
+ */
 export async function markToolUsed(id: string) {
   const current = await db.tools.get(id);
+
   if (!current) return null;
 
-  const next = {
+  const now = new Date().toISOString();
+
+  const next: ToolRecord = {
     ...current,
-    usageCount: current.usageCount + 1,
-    lastUsedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    version: current.version + 1,
-    syncState: current.syncState === "synced" ? "modified" : current.syncState,
+    lastUsedAt: now,
+    updatedAt: now,
   };
 
   await db.tools.put(next);
+
   return next;
-}
-
-export async function archiveTool(id: string) {
-  const current = await db.tools.get(id);
-  if (!current) return null;
-
-  const next = {
-    ...current,
-    archivedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    version: current.version + 1,
-    syncState: current.syncState === "synced" ? "modified" : current.syncState,
-  };
-
-  await db.tools.put(next);
-  return next;
-}
-
-export async function restoreTool(id: string) {
-  const current = await db.tools.get(id);
-  if (!current) return null;
-
-  const next = {
-    ...current,
-    archivedAt: null,
-    updatedAt: new Date().toISOString(),
-    version: current.version + 1,
-    syncState: current.syncState === "synced" ? "modified" : current.syncState,
-  };
-
-  await db.tools.put(next);
-  return next;
-}
-
-export async function deleteTool(id: string) {
-  await db.transaction("rw", db.tools, db.collections, async () => {
-    await db.tools.delete(id);
-
-    const collections = await db.collections
-      .filter((collection) => collection.toolIds.includes(id))
-      .toArray();
-
-    for (const collection of collections) {
-      await db.collections.put({
-        ...collection,
-        toolIds: collection.toolIds.filter((toolId) => toolId !== id),
-        updatedAt: new Date().toISOString(),
-        version: collection.version + 1,
-        syncState:
-          collection.syncState === "synced" ? "modified" : collection.syncState,
-      });
-    }
-  });
-}
-
-export async function searchToolLibrary(query: string) {
-  return searchTools(query);
-}
-
-export async function getRecentToolList(limit = 10) {
-  return getRecentTools(limit);
-}
-
-export async function getFavoriteToolList() {
-  return getFavoriteTools();
-}
-
-export async function getForgottenToolList(days = 90) {
-  return getForgottenTools(days);
-}
-
-export async function getRelatedToolList(toolId: string, minSharedTags = 2) {
-  return getRelatedTools(toolId, minSharedTags);
 }

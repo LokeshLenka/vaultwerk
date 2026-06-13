@@ -1,36 +1,22 @@
-import type { SyncState, ToolCategory, ToolSource, ToolType } from "../enums";
-
-export interface ToolRecord {
+export type ToolRecord = {
   id: string;
-  name: string;
+
   url: string;
   normalizedUrl: string;
+
+  name: string;
   domain: string;
+  faviconUrl?: string | null;
 
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  ogImageUrl: string | null;
-
-  description: string | null;
-  category: ToolCategory;
-  subcategory: string | null;
+  category: string | null;
   tags: string[];
-  toolType: ToolType;
 
-  notes: string | null;
+  description?: string | null;
+  notes?: string | null;
+
   isFavorite: boolean;
-  usageCount: number;
-  lastUsedAt: string | null;
-
-  source: ToolSource;
-
-  metadataStatus: "pending" | "complete" | "failed";
-  aiStatus: "pending" | "complete" | "failed" | "skipped";
 
   createdAt: string;
   updatedAt: string;
-  archivedAt: string | null;
-
-  syncState: SyncState;
-  version: number;
-}
+  lastUsedAt: string | null;
+};
