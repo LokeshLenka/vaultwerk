@@ -4,6 +4,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { NavItem } from "./nav-items";
+import { Link } from "react-router-dom";
 
 interface SidebarNavItemProps {
   item: NavItem;
@@ -19,7 +20,7 @@ export const SidebarNavItem = ({
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton render={<a href={item.href} />}>
+      <SidebarMenuButton render={<Link to={item.href} />}>
         {inline ? (
           <span className="flex size-4 items-center justify-center">
             <Icon />

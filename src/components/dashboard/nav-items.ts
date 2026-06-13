@@ -19,9 +19,9 @@ export const primaryNavItems: NavItem[] = [
 ];
 
 export const pageNavItems: NavItem[] = [
-  { label: "Library", href: "/library", icon: BooksIcon },
-  { label: "Collections", href: "/collections", icon: StackIcon },
-  { label: "Discover", href: "/discover", icon: CompassIcon },
-  { label: "Settings", href: "/settings", icon: GearIcon },
+  { label: "Library", href: "/dashboard/library", icon: BooksIcon },
+  { label: "Collections", href: "/dashboard/collections", icon: StackIcon },
+  { label: "Discover", href: "/dashboard/discover", icon: CompassIcon },
+  { label: "Settings", href: "/dashboard/settings", icon: GearIcon },
   { label: "Landing Page", href: "/", icon: ArrowLineLeftIcon },
 ];
