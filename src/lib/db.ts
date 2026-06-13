@@ -17,29 +17,20 @@ export class VaultWerkDB extends Dexie {
   constructor() {
     super("vaultwerk_db");
 
-    this.version(1).stores({
+    this.version(2).stores({
       tools: [
         "id",
         "&normalizedUrl",
         "name",
         "domain",
         "category",
-        "subcategory",
         "*tags",
-        "toolType",
         "isFavorite",
-        "source",
-        "metadataStatus",
-        "aiStatus",
         "createdAt",
         "updatedAt",
         "lastUsedAt",
-        "archivedAt",
-        "syncState",
-        "version",
-        "[isFavorite+archivedAt]",
-        "[category+archivedAt]",
-        "[syncState+updatedAt]",
+        "[isFavorite+updatedAt]",
+        "[category+updatedAt]",
       ].join(","),
 
       collections: [
@@ -79,54 +70,3 @@ export class VaultWerkDB extends Dexie {
 
 export const db = new VaultWerkDB();
 
-/* ---------------------------------- */
-/* URL normalization                  */
-/* ---------------------------------- */
-
-export function normalizeUrl(raw: string): {
-  url: string;
-  normalizedUrl: string;
-  domain: string;
-} {
-  const input = raw.trim();
-  const parsed = new URL(input);
-
-  parsed.hash = "";
-  parsed.hostname = parsed.hostname.toLowerCase();
-
-  if (
-    (parsed.protocol === "https:" && parsed.port === "443") ||
-    (parsed.protocol === "http:" && parsed.port === "80")
-  ) {
-    parsed.port = "";
-  }
-
-  const trackingParams = [
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_term",
-    "utm_content",
-    "ref",
-    "source",
-  ];
-
-  for (const key of [...parsed.searchParams.keys()]) {
-    if (trackingParams.includes(key)) {
-      parsed.searchParams.delete(key);
-    }
-  }
-
-  if (parsed.pathname.length > 1 && parsed.pathname.endsWith("/")) {
-    parsed.pathname = parsed.pathname.slice(0, -1);
-  }
-
-  const normalizedUrl = parsed.toString();
-  const domain = parsed.hostname.replace(/^www\./, "");
-
-  return {
-    url: input,
-    normalizedUrl,
-    domain,
-  };
-}

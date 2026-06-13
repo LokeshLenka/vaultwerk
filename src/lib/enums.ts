@@ -18,6 +18,16 @@ export const TOOL_CATEGORIES = [
   "deployment",
   "monitoring",
   "cli-terminal",
+  "ai",
+  "design",
+  "development",
+  "productivity",
+  "notes",
+  "research",
+  "communication",
+  "developer-tools",
+  "knowledge",
+  "collaboration",
   "other",
 ] as const;
 
@@ -30,6 +40,10 @@ export const TOOL_TYPES = [
   "saas",
   "extension",
   "github",
+  "desktop-app",
+  "mobile-app",
+  "cli",
+  "other",
 ] as const;
 
 export type ToolType = (typeof TOOL_TYPES)[number];
