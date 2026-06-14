@@ -5,9 +5,9 @@ import MainLayout from "./layouts/MainLayout";
 import Timeline from "./pages/landing/timeline/Timeline";
 import { TooltipProvider } from "./components/ui/tooltip";
 import DashboardLayout from "./layouts/DashboardLayout";
-import LibraryPage from "./pages/Library";
-import { CollectionsPage } from "./components/collections/collections-page";
-import { CollectionDetailsPage } from "./components/collections/collection-details-page";
+import LibraryPage from "./pages/tool/Library";
+import { CollectionsPage } from "./pages/collection/CollectionsPage";
+import { CollectionDetailsPage } from "./pages/collection/CollectionDetailsPage";
 
 function App() {
   const location = useLocation();
