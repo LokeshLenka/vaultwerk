@@ -14,7 +14,7 @@
 
 import { db } from "../db";
 import { normalizeUrl } from "../helpers/nomalize-url";
-import { findToolByNormalizedUrl } from "../queries/queries";
+import { findToolByNormalizedUrl } from "../queries/tools/queries";
 import type { ToolRecord } from "../types/tool";
 
 /**
