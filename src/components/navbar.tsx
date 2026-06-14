@@ -32,22 +32,17 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: "Home", to: "/", icon: <House size={16} /> },
-  { title: "Library", to: "/library", icon: <Books size={16} /> },
   {
-    title: "Collections",
-    to: "/collections",
-    icon: <SquaresFour size={16} />,
-  },
-  {
-    title: "Settings",
-    to: "/settings",
+    title: "Docs",
+    to: "/docs",
     icon: <Gear size={16} />,
   },
   {
-    title: "Product Timeline",
+    title: "Roadmap",
     to: "/timeline",
     icon: <MapPin size={16} />,
   },
+  // { title: "Go to dashboard", to: "/dashboard", icon: <Books size={16} /> },
 ];
 
 export function Navbar() {
@@ -108,8 +103,11 @@ export function Navbar() {
           <div className="hidden sm:block">
             <GitHubStarsButton username="LokeshLenka" repo="valutwerk" />
           </div>
+          <Link to={"/dashboard/library"}>
+            <Button>Get started</Button>
+          </Link>
 
-          <ModeToggle />
+          {/* <ModeToggle /> */}
 
           {/* Mobile hamburger */}
           <Sheet open={open} onOpenChange={setOpen}>
@@ -136,6 +134,7 @@ export function Navbar() {
                       Beta
                     </Badge>
                   </Link>
+                  
                 </SheetTitle>
               </SheetHeader>
 

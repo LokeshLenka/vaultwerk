@@ -71,7 +71,6 @@ const Phase1Content = () => {
                 <li>
                   Zustand stores wired up for tools, collections, and UI state
                 </li>
-                <li>16-category developer enum, tool type enum, tag system</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -83,32 +82,20 @@ const Phase1Content = () => {
                   Week 2
                 </Badge>
                 <span className="text-sm font-medium">
-                  URL Save Flow & AI Enrichment
+                  URL Save Flow & Suggestions
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="text-muted-foreground">
               <ul className="list-inside list-disc space-y-3 text-sm">
+                <li>Add tools by pasting a URL</li>
                 <li>
-                  QuickAddBar — paste URL, metadata auto-fills in under 5
-                  seconds
+                  Automatically fetch website title, description, favicon, and
+                  preview image
                 </li>
-                <li>
-                  Metadata pipeline: og:title, og:description, og:image,
-                  favicon, domain parsing
-                </li>
-                <li>
-                  Clearbit Logo API → favicon → og:image → initials avatar
-                  fallback chain
-                </li>
-                <li>
-                  Automatic description generation + relevant developer tag
-                  suggestions
-                </li>
-                <li>
-                  Smart category suggestions from the predefined 16-category
-                  system
-                </li>
+                <li>Display a logo or icon when available</li>
+                <li>Generate tags automatically</li>
+                <li>Suggest a category for the tool</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -137,11 +124,6 @@ const Phase1Content = () => {
                 <li>
                   Collections editor — create, name, color-code, and reorder
                   tool stacks
-                </li>
-                <li>
-                  30-50 curated built-in collections shipped on day one (Modern
-                  App Builder Stack, Agent Development Toolkit, Automation
-                  Stack, Full-Stack SaaS Stack, Indie Hacker Toolkit, etc.)
                 </li>
               </ul>
             </AccordionContent>
