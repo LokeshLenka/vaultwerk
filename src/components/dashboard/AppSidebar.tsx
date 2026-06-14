@@ -6,8 +6,9 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { primaryNavItems, pageNavItems } from "./nav-items";
+import { pageNavItems } from "./nav-items";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { Badge } from "../ui/badge";
 
 export const AppSidebar = () => (
   <Sidebar>
@@ -16,9 +17,18 @@ export const AppSidebar = () => (
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
-            {primaryNavItems.map((item) => (
+            {/* {primaryNavItems.map((item) => (
               <SidebarNavItem key={item.href} item={item} inline />
-            ))}
+            ))} */}
+            <div className="w-full flex items-center p-3">
+              <span className="font-brand font-bold text-xl">ValutWerk</span>
+              <Badge
+                variant="outline"
+                className="ml-1 px-1.5 text-xs border-green-500 text-green-500"
+              >
+                Beta
+              </Badge>
+            </div>
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

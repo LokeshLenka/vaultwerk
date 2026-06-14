@@ -1,3 +1,4 @@
+import { Kbd } from "@/components/ui/kbd";
 import { Button } from "../../ui/button";
 
 function ToolEmptyState({
@@ -23,14 +24,20 @@ function ToolEmptyState({
 
   return (
     <div className="rounded-2xl border border-dashed p-10 text-center">
-      <h3 className="text-base font-medium">Start your tool vault</h3>
+      <h3 className="text-base font-medium">No tools saved yet</h3>
+
       <p className="mt-2 text-sm text-muted-foreground">
-        Save the tools you want to remember, revisit, and reopen later.
+        Save websites, libraries, frameworks, and tools you want to find again.
       </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Add your first tool to begin building your personal developer memory
-        system.
-      </p>
+
+      <div className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground">
+        <span>Add a tool:</span>
+        <Kbd>Ctrl</Kbd>
+        <span>+</span>
+        <Kbd>Shift</Kbd>
+        <span>+</span>
+        <Kbd>A</Kbd>
+      </div>
     </div>
   );
 }

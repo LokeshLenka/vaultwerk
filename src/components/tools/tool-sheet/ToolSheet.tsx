@@ -20,10 +20,11 @@ import {
 import ToolSheetForm, { type ToolFormState } from "./ToolSheetForm";
 import ToolDeleteDialog from "./ToolDeleteDialog";
 import { cn } from "@/lib/utils";
+import { useUrlDuplicateCheck } from "@/hooks/use-url-duplicate-check";
 
 const emptyForm: ToolFormState = {
   name: "",
-  url: "",
+  url: "https://",
   category: "",
   tags: "",
   description: "",
@@ -51,19 +52,38 @@ export default function ToolSheet({
   const [form, setForm] = useState<ToolFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  const { isDuplicate, duplicateName, isChecking } = useUrlDuplicateCheck(
+    form.url.trim(),
+    tool?.id,
+  );
+
   const setOpen = (value: boolean) => {
+    if (!value) {
+      setDeleteDialogOpen(false);
+    }
+
     onOpenChange?.(value);
     if (open === undefined) setInternalOpen(value);
   };
+
+  useEffect(() => {
+    setDeleteDialogOpen(false);
+  }, [tool?.id]);
+
+  useEffect(() => {
+    if (!controlledOpen) {
+      setDeleteDialogOpen(false);
+    }
+  }, [controlledOpen]);
 
   useEffect(() => {
     if (!tool) {
       setForm(emptyForm);
       return;
     }
+
     setForm({
       name: tool.name ?? "",
       url: tool.normalizedUrl ?? "",
@@ -92,21 +112,30 @@ export default function ToolSheet({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const trimmedUrl = form.url.trim();
+
+    if (!trimmedUrl || trimmedUrl === "https://") return;
+    if (isDuplicate || isChecking) return;
+
     setSaving(true);
+
     const payload = {
       name: form.name.trim(),
-      url: form.url.trim(),
+      url: trimmedUrl,
       category: (form.category.trim() || null) as any,
       description: form.description.trim() || null,
       tags: parsedTags,
       isFavorite: form.isFavorite,
     };
+
     try {
       if (isEdit && tool?.id) {
         await updateTool(tool.id, payload);
       } else {
         await createTool(payload);
       }
+
       await onSuccess?.();
       setOpen(false);
       if (!isEdit) setForm(emptyForm);
@@ -117,9 +146,11 @@ export default function ToolSheet({
 
   async function handleDelete() {
     if (!tool?.id) return;
+
     setDeleting(true);
     try {
       await deleteTool(tool.id);
+      setDeleteDialogOpen(false);
       await onSuccess?.();
       setOpen(false);
     } finally {
@@ -130,7 +161,7 @@ export default function ToolSheet({
   return (
     <Sheet open={controlledOpen} onOpenChange={setOpen}>
       {!tool ? (
-        <SheetTrigger>
+        <SheetTrigger asChild>
           <Button
             size="icon"
             className="fixed bottom-8 right-8 z-10 size-12 shadow-xl sm:h-12 sm:w-auto sm:px-4"
@@ -140,7 +171,7 @@ export default function ToolSheet({
           </Button>
         </SheetTrigger>
       ) : null}
-  
+
       <SheetContent
         className={cn(
           "min-w-xs sm:min-w-lg w-full overflow-y-auto px-4",
@@ -161,18 +192,22 @@ export default function ToolSheet({
             form={form}
             parsedTags={parsedTags}
             onChange={handleFieldChange}
+            urlIsDuplicate={isDuplicate}
+            urlDuplicateName={duplicateName}
+            urlIsChecking={isChecking}
           />
 
           <SheetFooter>
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || isDuplicate || isChecking}
               className="w-full sm:w-auto"
             >
               <FloppyDisk className="mr-2 size-4" />
               {saving ? "Saving..." : isEdit ? "Save changes" : "Save tool"}
             </Button>
           </SheetFooter>
+
           <div className="mb-4">
             {isEdit ? (
               <ToolDeleteDialog

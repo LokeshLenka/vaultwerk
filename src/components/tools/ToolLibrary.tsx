@@ -1,7 +1,7 @@
 // ToolLibrary.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "../ui/input";
-import { MagnifyingGlass, X } from "@phosphor-icons/react";
+import { MagnifyingGlass, MagnifyingGlassIcon, X } from "@phosphor-icons/react";
 import { listTools, markToolUsed } from "@/lib/services/tool-service";
 import type { ToolRecord } from "@/lib/types/tool";
 import { SeedToolsButton } from "@/lib/seeders/tool/seedtools";
@@ -9,6 +9,12 @@ import ToolSheet from "./tool-sheet/ToolSheet";
 import ToolListSkeleton from "./tool-list-states/ToolListSkeleton";
 import ToolEmptyState from "./tool-list-states/ToolEmptyState";
 import ToolVaultCard from "./tool-card/ToolCard";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "../ui/input-group";
+import { Kbd } from "../ui/kbd";
 
 export default function ToolLibrary() {
   const [tools, setTools] = useState<ToolRecord[] | null>(null);
@@ -120,24 +126,38 @@ export default function ToolLibrary() {
 
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <div className="relative w-full sm:w-[360px]">
-            <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tools, tags, categories, or notes..."
-              className="pl-9 pr-10"
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Clear search"
+            <InputGroup>
+              <InputGroupAddon>
+                <MagnifyingGlassIcon className="size-4" />
+              </InputGroupAddon>
+
+              <InputGroupInput
+                ref={searchInputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search tools, tags, categories, or notes..."
+                className="pl-9"
+                style={{ paddingRight: "0.1rem" }}
+              />
+
+              <InputGroupAddon
+                align="inline-end"
+                className="flex items-center gap-1 pr-2"
               >
-                <X className="size-4" />
-              </button>
-            ) : null}
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+                <Kbd>Ctrl</Kbd>
+                <Kbd>K</Kbd>
+              </InputGroupAddon>
+            </InputGroup>
           </div>
         </div>
       </div>
