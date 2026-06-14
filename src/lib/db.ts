@@ -4,10 +4,6 @@ import type { CollectionRecord } from "./types/collection";
 import type { SettingRecord } from "./types/setting";
 import type { JobRecord } from "./types/job";
 
-/* ---------------------------------- */
-/* Dexie database                     */
-/* ---------------------------------- */
-
 export class VaultWerkDB extends Dexie {
   tools!: Table<ToolRecord, string>;
   collections!: Table<CollectionRecord, string>;
@@ -17,7 +13,7 @@ export class VaultWerkDB extends Dexie {
   constructor() {
     super("vaultwerk_db");
 
-    this.version(2).stores({
+    this.version(4).stores({
       tools: [
         "id",
         "&normalizedUrl",
@@ -29,29 +25,16 @@ export class VaultWerkDB extends Dexie {
         "createdAt",
         "updatedAt",
         "lastUsedAt",
-        "[isFavorite+updatedAt]",
-        "[category+updatedAt]",
       ].join(","),
-
       collections: [
         "id",
         "name",
-        "slug",
-        "isPublic",
-        "creatorId",
-        "source",
+        "description",
         "*toolIds",
         "createdAt",
         "updatedAt",
-        "archivedAt",
-        "syncState",
-        "version",
-        "[isPublic+archivedAt]",
-        "[syncState+updatedAt]",
       ].join(","),
-
       settings: "&key",
-
       jobs: [
         "id",
         "type",
@@ -61,12 +44,10 @@ export class VaultWerkDB extends Dexie {
         "attempts",
         "createdAt",
         "updatedAt",
-        "[status+createdAt]",
-        "[entityType+entityId]",
       ].join(","),
     });
   }
 }
 
 export const db = new VaultWerkDB();
-
+export default db;

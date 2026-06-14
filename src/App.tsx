@@ -6,6 +6,8 @@ import Timeline from "./pages/landing/timeline/Timeline";
 import { TooltipProvider } from "./components/ui/tooltip";
 import DashboardLayout from "./layouts/DashboardLayout";
 import LibraryPage from "./pages/Library";
+import { CollectionsPage } from "./components/collections/collections-page";
+import { CollectionDetailsPage } from "./components/collections/collection-details-page";
 
 function App() {
   const location = useLocation();
@@ -17,10 +19,11 @@ function App() {
           <Route path="/timeline" element={<Timeline />} />
         </Route>
         <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Timeline />} />
+          {/* <Route index element={<Timeline />} /> */}
           <Route path="library" element={<LibraryPage />} />
+          <Route path="collections" element={<CollectionsPage />} />
+          <Route path="collections/:id" element={<CollectionDetailsPage />} />
         </Route>
-
       </Routes>
     </TooltipProvider>
   );
