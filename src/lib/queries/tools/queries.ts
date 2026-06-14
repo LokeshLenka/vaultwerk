@@ -9,8 +9,8 @@
  * - search
  * - related tool discovery
  */
-import { db } from "../db";
-import type { ToolRecord } from "../types/tool";
+import { db } from "../../db";
+import type { ToolRecord } from "../../types/tool";
 
 /**
  * Finds a tool by its canonical normalized URL.
