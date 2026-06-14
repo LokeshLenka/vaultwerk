@@ -16,8 +16,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -33,6 +31,9 @@ const EMPTY_VALUES: CollectionFormValues = {
   description: "",
 };
 
+const NAME_MAX = 50;
+const DESC_MAX = 300;
+
 export function UpsertCollectionDialog({
   open,
   onOpenChange,
@@ -43,6 +44,8 @@ export function UpsertCollectionDialog({
     Partial<Record<keyof CollectionFormValues, string>>
   >({});
   const [submitting, setSubmitting] = useState(false);
+
+  const isEditing = Boolean(collection);
 
   const initialValues = useMemo<CollectionFormValues>(() => {
     if (!collection) return EMPTY_VALUES;
@@ -85,59 +88,86 @@ export function UpsertCollectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {collection ? "Edit collection" : "Create collection"}
+            {isEditing ? "Edit collection" : "New collection"}
           </DialogTitle>
-          <DialogDescription>Name and description only.</DialogDescription>
         </DialogHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="collection-name">Name</Label>
+        <form className="space-y-5 pt-1" onSubmit={handleSubmit}>
+          {/* Name field */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="collection-name">Name</Label>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {values.name.length}/{NAME_MAX}
+              </span>
+            </div>
             <Input
               id="collection-name"
               value={values.name}
               onChange={(e) =>
                 setValues((prev) => ({ ...prev, name: e.target.value }))
               }
-              maxLength={50}
+              placeholder="e.g. Design tools, Dev utilities"
+              maxLength={NAME_MAX}
+              autoFocus
             />
-            {errors.name ? (
-              <p className="text-sm text-destructive">{errors.name}</p>
-            ) : null}
+            {errors.name && (
+              <p className="text-xs text-destructive">{errors.name}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="collection-description">Description</Label>
+          {/* Description field */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="collection-description">
+                Description
+                <span className="ml-1 text-muted-foreground font-normal">
+                  (optional)
+                </span>
+              </Label>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {values.description.length}/{DESC_MAX}
+              </span>
+            </div>
             <Textarea
               id="collection-description"
               value={values.description}
               onChange={(e) =>
                 setValues((prev) => ({ ...prev, description: e.target.value }))
               }
-              maxLength={300}
+              placeholder="What is this collection for?"
+              maxLength={DESC_MAX}
+              rows={3}
+              className="resize-none"
             />
-            {errors.description ? (
-              <p className="text-sm text-destructive">{errors.description}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">Optional</p>
+            {errors.description && (
+              <p className="text-xs text-destructive">{errors.description}</p>
             )}
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-1">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => onOpenChange(false)}
+              disabled={submitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting}>
-              {collection ? "Save changes" : "Create collection"}
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting
+                ? isEditing
+                  ? "Saving…"
+                  : "Creating…"
+                : isEditing
+                ? "Save changes"
+                : "Create collection"}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

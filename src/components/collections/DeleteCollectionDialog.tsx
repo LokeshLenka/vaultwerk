@@ -32,14 +32,20 @@ export function DeleteCollectionDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete collection?</AlertDialogTitle>
+          <AlertDialogTitle>Delete &ldquo;{collection?.name}&rdquo;?</AlertDialogTitle>
           <AlertDialogDescription>
-            This removes the collection only. Tools remain in the database.
+            This removes the collection only — all tools inside will remain in your database.
+            This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete collection
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

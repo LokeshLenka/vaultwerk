@@ -6,6 +6,7 @@ import { CollectionCard } from "@/components/collections/CollectionCard";
 import { UpsertCollectionDialog } from "@/components/collections/UpsertCollectionDialog";
 import { DeleteCollectionDialog } from "@/components/collections/DeleteCollectionDialog";
 import type { CollectionRecord } from "@/lib/types/collection";
+import { Folder, MagnifyingGlass, X, Plus } from "@phosphor-icons/react";
 
 export function CollectionsPage() {
   const collections = useCollections() ?? [];
@@ -27,29 +28,79 @@ export function CollectionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Collections</h1>
-          <p className="text-sm text-muted-foreground">
-            Create and manage tool collections.
+          <h1 className="text-xl font-semibold leading-tight">Collections</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Group and organise your saved tools.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>Create collection</Button>
+        <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setCreateOpen(true)}>
+          <Plus size={14} weight="bold" />
+          New collection
+        </Button>
       </div>
 
-      <Input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search collections"
-        className="max-w-md"
-      />
+      {/* Search */}
+      {collections.length > 0 && (
+        <div className="relative max-w-sm">
+          <MagnifyingGlass
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search collections…"
+            className="pl-8 pr-8"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
-      {filteredCollections.length === 0 ? (
-        <div className="rounded-md border p-6 text-sm text-muted-foreground">
-          No collections found.
+      {/* Content */}
+      {collections.length === 0 ? (
+        // Empty state — no collections yet
+        <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+            <Folder size={22} weight="duotone" className="text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No collections yet</p>
+            <p className="text-sm text-muted-foreground max-w-[28ch]">
+              Create a collection to start grouping related tools together.
+            </p>
+          </div>
+          <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+            <Plus size={14} weight="bold" />
+            Create your first collection
+          </Button>
+        </div>
+      ) : filteredCollections.length === 0 ? (
+        // Empty state — search returned nothing
+        <div className="rounded-lg border border-dashed px-6 py-10 text-center">
+          <p className="text-sm font-medium">No results for &ldquo;{query}&rdquo;</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Try a different name or description.
+          </p>
+          <button
+            onClick={() => setQuery("")}
+            className="mt-3 text-sm text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Clear search
+          </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredCollections.map((collection) => (
             <CollectionCard
               key={collection.id}
