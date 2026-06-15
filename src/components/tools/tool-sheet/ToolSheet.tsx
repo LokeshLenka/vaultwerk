@@ -161,7 +161,7 @@ export default function ToolSheet({
   return (
     <Sheet open={controlledOpen} onOpenChange={setOpen}>
       {!tool ? (
-        <SheetTrigger asChild>
+        <SheetTrigger  >
           <Button
             size="icon"
             className="fixed bottom-8 right-8 z-10 size-12 shadow-xl sm:h-12 sm:w-auto sm:px-4"

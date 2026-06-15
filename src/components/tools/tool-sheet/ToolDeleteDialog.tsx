@@ -36,7 +36,7 @@ export default function ToolDeleteDialog({
       </p>
 
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogTrigger asChild>
+        <AlertDialogTrigger  >
           <Button variant="destructive" size="sm" disabled={deleting}>
             <Trash className="mr-2 size-4" />
             Delete tool

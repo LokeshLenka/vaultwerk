@@ -1,7 +1,7 @@
 import { db } from "../../db";
 import { createToolRecord } from "../../factories/ToolFactory";
 import type { ToolCategory, ToolType, ToolSource } from "../../enums";
-import { findToolByNormalizedUrl } from "../../queries/queries";
+import { findToolByNormalizedUrl } from "../../queries/tools/queries";
 import { normalizeUrl } from "@/lib/helpers/nomalize-url";
 
 type SeedToolTemplate = {

@@ -1,7 +1,6 @@
 // ToolLibrary.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Input } from "../ui/input";
-import { MagnifyingGlass, MagnifyingGlassIcon, X } from "@phosphor-icons/react";
+import { MagnifyingGlassIcon, X } from "@phosphor-icons/react";
 import { listTools, markToolUsed } from "@/lib/services/tool-service";
 import type { ToolRecord } from "@/lib/types/tool";
 import { SeedToolsButton } from "@/lib/seeders/tool/seedtools";

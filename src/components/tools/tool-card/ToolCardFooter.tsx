@@ -44,7 +44,7 @@ export default function ToolCardFooter({ tool, onEdit, onOpen }: Props) {
             size="icon"
             className="size-8"
             aria-label={`Open ${tool.name}`}
-            asChild
+             
           >
             <a
               href={tool.url}

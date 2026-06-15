@@ -77,17 +77,6 @@ function buildDescription(name: string, category?: ToolCategory) {
   return randomItem(templates);
 }
 
-function buildNotes(name: string) {
-  const templates = [
-    `Saved for testing and future exploration of ${name}.`,
-    `Looks promising for regular use; revisit after more hands-on testing.`,
-    `Potential fit for library organization and quick-access workflows.`,
-    `Add better metadata later after validating real usage.`,
-  ];
-
-  return randomItem(templates);
-}
-
 export function createToolRecord(input: {
   id: string;
   name: string;
@@ -105,7 +94,6 @@ export function createToolRecord(input: {
   const createdAt = useSeed ? randomDateWithinDays(180) : now;
   const updatedAt = useSeed ? randomDateWithinDays(60) : now;
   const wasUsed = useSeed ? randomBool(0.8) : false;
-  const isArchived = useSeed ? randomBool(0.15) : false;
 
   return {
     id: input.id,
