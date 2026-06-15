@@ -60,7 +60,7 @@ export function CollectionDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
         <p className="text-sm font-medium">Collection not found</p>
-        <Button asChild size="sm" variant="outline">
+        <Button   size="sm" variant="outline">
           <Link to="/dashboard/collections">
             <ArrowLeft size={14} className="mr-1.5" />
             Back to collections
@@ -74,7 +74,7 @@ export function CollectionDetailsPage() {
       {/* Breadcrumb + header */}
       <div className="space-y-3">
         <Button
-          asChild
+           
           size="sm"
           variant="ghost"
           className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground px-2 h-7"

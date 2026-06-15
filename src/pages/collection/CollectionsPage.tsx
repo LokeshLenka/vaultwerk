@@ -42,6 +42,8 @@ export function CollectionsPage() {
         </Button>
       </div>
 
+      
+
       {/* Search */}
       {collections.length > 0 && (
         <div className="relative max-w-sm">

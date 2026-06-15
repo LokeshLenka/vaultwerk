@@ -48,7 +48,7 @@ export function CollectionCard({
 
       <CardContent className="flex items-center justify-between gap-2 pt-0">
         <Button
-          asChild
+           
           size="sm"
           variant="ghost"
           className="gap-1.5 px-2 text-muted-foreground hover:text-foreground"
