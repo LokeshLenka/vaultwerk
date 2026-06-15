@@ -1,12 +1,19 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useCollections } from "@/hooks/use-collections";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CollectionCard } from "@/components/collections/CollectionCard";
 import { UpsertCollectionDialog } from "@/components/collections/UpsertCollectionDialog";
 import { DeleteCollectionDialog } from "@/components/collections/DeleteCollectionDialog";
 import type { CollectionRecord } from "@/lib/types/collection";
-import { Folder, MagnifyingGlass, X, Plus } from "@phosphor-icons/react";
+import { Folder, X, Plus, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Kbd } from "@/components/ui/kbd";
+import CollectionEmptyState from "@/components/collections/CollectionEmptyState";
+import CollectionCard from "@/components/collections/collection-card/CollectionCard";
+import { SeedCollectionsButton } from "@/lib/seeders/collection/seed-collections";
 
 export function CollectionsPage() {
   const collections = useCollections() ?? [];
@@ -14,6 +21,7 @@ export function CollectionsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<CollectionRecord | null>(null);
   const [deleting, setDeleting] = useState<CollectionRecord | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filteredCollections = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -26,81 +34,92 @@ export function CollectionsPage() {
     );
   }, [collections, query]);
 
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const handleClearSearch = useCallback(() => setQuery(""), []);
+
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold leading-tight">Collections</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">Collections</h2>
+          <p className="text-sm text-muted-foreground">
             Group and organise your saved tools.
           </p>
         </div>
-        <Button size="sm" className="gap-1.5 shrink-0" onClick={() => setCreateOpen(true)}>
-          <Plus size={14} weight="bold" />
-          New collection
-        </Button>
-      </div>
 
-      
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-[360px]">
+            <InputGroup>
+              <InputGroupAddon>
+                <MagnifyingGlassIcon className="size-4" />
+              </InputGroupAddon>
 
-      {/* Search */}
-      {collections.length > 0 && (
-        <div className="relative max-w-sm">
-          <MagnifyingGlass
-            size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-          />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search collections…"
-            className="pl-8 pr-8"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
+              <InputGroupInput
+                ref={searchInputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search tools, tags, categories, or notes..."
+                className="pl-9"
+                style={{ paddingRight: "0.1rem" }}
+              />
+
+              <InputGroupAddon
+                align="inline-end"
+                className="flex items-center gap-1 pr-2"
+              >
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+                <Kbd>Ctrl</Kbd>
+                <Kbd>K</Kbd>
+              </InputGroupAddon>
+            </InputGroup>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Content */}
       {collections.length === 0 ? (
         // Empty state — no collections yet
-        <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-16 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed py-8 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-            <Folder size={22} weight="duotone" className="text-muted-foreground" />
+            <Folder
+              size={22}
+              weight="duotone"
+              className="text-muted-foreground"
+            />
           </div>
           <div className="space-y-1">
             <p className="text-sm font-medium">No collections yet</p>
-            <p className="text-sm text-muted-foreground max-w-[28ch]">
+            <p className="text-sm text-muted-foreground">
               Create a collection to start grouping related tools together.
             </p>
           </div>
-          <Button size="sm" className="gap-1.5" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus size={14} weight="bold" />
             Create your first collection
           </Button>
         </div>
       ) : filteredCollections.length === 0 ? (
-        // Empty state — search returned nothing
-        <div className="rounded-lg border border-dashed px-6 py-10 text-center">
-          <p className="text-sm font-medium">No results for &ldquo;{query}&rdquo;</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Try a different name or description.
-          </p>
-          <button
-            onClick={() => setQuery("")}
-            className="mt-3 text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Clear search
-          </button>
-        </div>
+        <CollectionEmptyState
+          hasQuery={!!normalizedQuery}
+          query={query}
+          onClearSearch={handleClearSearch}
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredCollections.map((collection) => (
@@ -125,6 +144,8 @@ export function CollectionsPage() {
         onOpenChange={(open) => !open && setDeleting(null)}
         collection={deleting}
       />
+
+      <SeedCollectionsButton />
     </div>
   );
 }
