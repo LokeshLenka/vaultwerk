@@ -2,16 +2,20 @@ import { Kbd } from "@/components/ui/kbd";
 import { Button } from "../../ui/button";
 
 function ToolEmptyState({
+  query,
   hasQuery,
   onClearSearch,
 }: {
+  query: string;
   hasQuery: boolean;
   onClearSearch: () => void;
 }) {
   if (hasQuery) {
     return (
       <div className="rounded-2xl border border-dashed p-10 text-center">
-        <h3 className="text-base font-medium">No matching tools</h3>
+        <h3 className="text-base font-medium">
+          No results for &ldquo;{query}&rdquo;
+        </h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Try a different tool name, tag, category, or note.
         </p>

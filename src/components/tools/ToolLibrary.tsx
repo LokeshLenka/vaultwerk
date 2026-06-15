@@ -169,6 +169,7 @@ export default function ToolLibrary() {
 
       {filteredTools.length === 0 ? (
         <ToolEmptyState
+          query={query}
           hasQuery={!!normalizedQuery}
           onClearSearch={handleClearSearch}
         />
