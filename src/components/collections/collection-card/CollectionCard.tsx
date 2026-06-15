@@ -17,7 +17,7 @@ type Props = {
   onDelete: (collection: CollectionRecord) => void;
 };
 
-function CollectionCardComponent({ collection, onEdit, onDelete }: Props) {
+function CollectionCardComponent({ collection }: Props) {
   return (
     <Card className="flex h-full flex-col rounded-none border-border/70 bg-card shadow-none transition-colors hover:bg-accent/30">
       <CardHeader className="space-y-0 px-4 sm:px-5">
@@ -35,8 +35,6 @@ function CollectionCardComponent({ collection, onEdit, onDelete }: Props) {
         <CollectionCardFooter
           collectionId={collection.id}
           collection={collection}
-          onEdit={onEdit}
-          onDelete={onDelete}
         />
       </CardFooter>
     </Card>
