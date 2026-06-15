@@ -1,15 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  ListIcon,
-  GitBranch,
-  Books,
-  SquaresFour,
-  Gear,
-  MapPin,
-  House,
-} from "@phosphor-icons/react";
-import { ModeToggle } from "./mode-toggle";
+import { ListIcon, Gear, MapPin, House } from "@phosphor-icons/react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
@@ -21,8 +12,8 @@ import {
 } from "./ui/sheet";
 import { cn } from "../lib/utils";
 import { GitHubStarsButton } from "./github-stars-button";
-import LogoDarkTheme from "../assets/favicon.svg";
-import LogoLightTheme from "../assets/logo-light-theme.svg";
+import LogoLightTheme from "../../public/vaultwerk-light-logo.png";
+import LogoDarkTheme from "../../public/vaultwerk-dark-logo.png";
 
 interface NavItem {
   title: string;
@@ -60,12 +51,12 @@ export function Navbar() {
           <img
             src={LogoLightTheme}
             alt="ValutWerk Logo"
-            className="h-12 w-12 bg-black block dark:hidden"
+            className="h-10 w-10 bg-black block dark:hidden"
           />{" "}
           <img
             src={LogoDarkTheme}
             alt="ValutWerk Logo"
-            className="h-12 w-12 dark:bg-white hidden dark:block"
+            className="h-10 w-10 dark:bg-white hidden dark:block"
           />
           <span className="font-brand">ValutWerk</span>
           <Badge
@@ -119,23 +110,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <SheetHeader className="mb-6">
-                <SheetTitle>
-                  <Link
-                    to="/"
-                    className="flex items-center gap-2 text-base font-semibold tracking-tight"
-                    onClick={() => setOpen(false)}
-                  >
-                    <GitBranch className="size-4" />
-                    <span className="font-brand">ValutWerk</span>
-                    <Badge
-                      variant="outline"
-                      className="px-1.5 text-xs border-green-500 text-green-500"
-                    >
-                      Beta
-                    </Badge>
-                  </Link>
-                  
-                </SheetTitle>
+                <SheetTitle></SheetTitle>
               </SheetHeader>
 
               <nav className="flex flex-col gap-1">
