@@ -17,7 +17,7 @@ import {
   WarningCircle,
   Spinner,
 } from "@phosphor-icons/react";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const location = useLocation();
