@@ -11,6 +11,7 @@ import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function App() {
           </Route>
         </Routes>
       </TooltipProvider>
+      <Analytics />
     </>
   );
 }
