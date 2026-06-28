@@ -7,14 +7,17 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import LibraryPage from "./pages/tool/Library";
 import { CollectionsPage } from "./pages/collection/CollectionsPage";
 import { CollectionDetailsPage } from "./pages/collection/CollectionDetailsPage";
+import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { GlobalLoader } from "./components/GlobalLoader";
+import { Toaster } from "sonner";
 
 function App() {
   const location = useLocation();
   return (
     <>
       <GlobalLoader />
+      <Toaster />
       <TooltipProvider>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<MainLayout />}>
@@ -26,6 +29,7 @@ function App() {
             <Route path="library" element={<LibraryPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:id" element={<CollectionDetailsPage />} />
+            <Route path="settings" element={<WorkspaceSettingsPage />} />
           </Route>
         </Routes>
       </TooltipProvider>

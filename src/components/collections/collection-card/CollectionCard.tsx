@@ -35,6 +35,7 @@ function CollectionCardComponent({ collection }: Props) {
         <CollectionCardFooter
           collectionId={collection.id}
           collection={collection}
+          toolIds={collection.toolIds}
         />
       </CardFooter>
     </Card>

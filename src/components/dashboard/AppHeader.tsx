@@ -1,24 +1,53 @@
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
+
+function formatSegment(segment: string) {
+  return segment
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export const AppHeader = () => {
   const { pathname } = useLocation();
+  const segments = pathname.split("/").filter(Boolean);
 
-  const breadcrumb =
-    pathname
-      .split("/")
-      .filter(Boolean)
-      .pop()
-      ?.replace(/-/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase()) || "Dashboard";
+  const collectionId = segments[1] === "collections" && segments[2] ? segments[2] : null;
+  const collection = useLiveQuery(
+    () => (collectionId ? db.collections.get(collectionId) : undefined),
+    [collectionId],
+  );
+
+  const crumbs: { label: string; to?: string }[] = [];
+
+  if (segments.length <= 1) {
+    crumbs.push({ label: "Dashboard" });
+  } else {
+    for (let i = 1; i < segments.length; i++) {
+      const segment = segments[i];
+      const isLast = i === segments.length - 1;
+
+      if (isLast && segment === collectionId) {
+        crumbs.push({ label: collection?.name ?? "..." });
+      } else {
+        crumbs.push({
+          label: formatSegment(segment),
+          to: isLast ? undefined : "/" + segments.slice(0, i + 1).join("/"),
+        });
+      }
+    }
+  }
 
   return (
     <header className="bg-card sticky top-0 z-50 border-b">
@@ -30,9 +59,20 @@ export const AppHeader = () => {
 
           <Breadcrumb className="hidden sm:block">
             <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>{breadcrumb}</BreadcrumbPage>
-              </BreadcrumbItem>
+              {crumbs.map((crumb, i) => (
+                <BreadcrumbItem key={i}>
+                  {crumb.to ? (
+                    <>
+                      <BreadcrumbLink render={<Link to={crumb.to} />}>
+                        {crumb.label}
+                      </BreadcrumbLink>
+                      <BreadcrumbSeparator />
+                    </>
+                  ) : (
+                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+              ))}
             </BreadcrumbList>
           </Breadcrumb>
         </div>

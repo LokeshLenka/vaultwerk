@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
@@ -17,6 +17,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+
 import type { ToolRecord } from "@/lib/types/tool";
 import {
   addToolToCollection,
@@ -24,38 +30,52 @@ import {
 } from "@/lib/services/collection-service";
 import {
   ArrowLeft,
+  ArrowSquareOut,
+  Globe,
   MagnifyingGlass,
   X,
   Wrench,
   Plus,
   Minus,
+  NotePencil,
   Stack,
   Toolbox,
   Trash,
 } from "@phosphor-icons/react";
+import { useWorkspace } from "@/hooks/use-workspace";
+import WorkspaceFlow from "@/components/workspace/WorkspaceFlow";
 
 function formatRelativeDate(value?: string | null) {
-  if (!value) return "Saved recently";
+  if (!value) return null;
 
   const diffDays = Math.floor(
     (Date.now() - new Date(value).getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  if (Number.isNaN(diffDays)) return "Saved recently";
-  if (diffDays <= 0) return "Saved today";
-  if (diffDays === 1) return "Saved yesterday";
-  if (diffDays < 7) return `Saved ${diffDays} days ago`;
+  if (Number.isNaN(diffDays)) return null;
+  if (diffDays <= 0) return "today";
+  if (diffDays === 1) return "yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) {
     const w = Math.floor(diffDays / 7);
-    return `Saved ${w} week${w > 1 ? "s" : ""} ago`;
+    return `${w} week${w > 1 ? "s" : ""} ago`;
   }
   if (diffDays < 365) {
     const m = Math.floor(diffDays / 30);
-    return `Saved ${m} month${m > 1 ? "s" : ""} ago`;
+    return `${m} month${m > 1 ? "s" : ""} ago`;
   }
 
   const y = Math.floor(diffDays / 365);
-  return `Saved ${y} year${y > 1 ? "s" : ""} ago`;
+  return `${y} year${y > 1 ? "s" : ""} ago`;
+}
+
+function getFaviconUrl(tool: ToolRecord): string | null {
+  return (
+    tool.faviconUrl ||
+    (tool.domain
+      ? `https://www.google.com/s2/favicons?domain=${tool.domain}&sz=32`
+      : null)
+  );
 }
 
 export function CollectionDetailsPage() {
@@ -69,9 +89,9 @@ export function CollectionDetailsPage() {
   const [nameDraft, setNameDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const workspace = useWorkspace();
 
   const collection = useLiveQuery(() => db.collections.get(id), [id]);
   const allTools =
@@ -176,6 +196,17 @@ export function CollectionDetailsPage() {
 
     setEditingField((current) => (current === field ? null : current));
   };
+
+  const handleOpenAll = useCallback(() => {
+    const tools = selectedTools
+      .filter((t) => t.url)
+      .map((t) => ({ name: t.name, url: t.url! }));
+    workspace.launch(tools);
+  }, [selectedTools, workspace]);
+
+  const handleOpenTool = useCallback((tool: ToolRecord) => {
+    if (tool.url) window.open(tool.url, "_blank");
+  }, []);
 
   const handleDeleteCollection = async () => {
     if (!collection) return;
@@ -354,11 +385,28 @@ export function CollectionDetailsPage() {
           <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Tools in this collection
           </h2>
-          {selectedTools.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Remove tools here anytime.
-            </p>
-          ) : null}
+
+          <div className="flex items-center gap-1">
+            {selectedTools.length > 0 ? (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={handleOpenAll}
+                    aria-label={`Open all ${selectedTools.length} tools in new tabs`}
+                  >
+                    <ArrowSquareOut size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Open all {selectedTools.length} tool
+                  {selectedTools.length !== 1 ? "s" : ""}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
         </div>
 
         {selectedTools.length === 0 ? (
@@ -379,43 +427,115 @@ export function CollectionDetailsPage() {
         ) : (
           <div className="overflow-hidden border bg-background">
             <div className="divide-y">
-              {selectedTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium">
-                        {tool.name}
-                      </p>
-                      {tool.category ? (
-                        <Badge
-                          variant="secondary"
-                          className="hidden rounded-none text-[11px] sm:inline-flex"
-                        >
-                          {tool.category}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {tool.domain || "Unknown domain"}
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 shrink-0 rounded-none px-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() =>
-                      removeToolFromCollection(collection.id, tool.id)
-                    }
+              {selectedTools.map((tool) => {
+                const favicon = getFaviconUrl(tool);
+                const lastUsed = tool.lastUsedAt
+                  ? formatRelativeDate(tool.lastUsedAt)
+                  : null;
+                return (
+                  <div
+                    key={tool.id}
+                    className="group flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
                   >
-                    <Minus size={12} className="mr-1.5" />
-                    Remove
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div
+                        className="mt-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
+                        onClick={() => handleOpenTool(tool)}
+                      >
+                        {favicon ? (
+                          <img src={favicon} alt="" className="size-5" />
+                        ) : (
+                          <Globe className="size-4 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="truncate text-sm font-medium underline-offset-2 hover:underline"
+                            onClick={() => handleOpenTool(tool)}
+                            title={`Open ${tool.name}`}
+                          >
+                            {tool.name}
+                          </button>
+                          {tool.domain ? (
+                            <span className="hidden shrink-0 text-xs text-muted-foreground/60 sm:inline">
+                              {tool.domain}
+                            </span>
+                          ) : null}
+                          {tool.category ? (
+                            <Badge
+                              variant="secondary"
+                              className="hidden shrink-0 rounded-none text-[11px] sm:inline-flex"
+                            >
+                              {tool.category}
+                            </Badge>
+                          ) : null}
+                        </div>
+
+                        {tool.description ? (
+                          <p className="line-clamp-1 text-xs text-muted-foreground/70">
+                            {tool.description}
+                          </p>
+                        ) : null}
+
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          {tool.tags && tool.tags.length > 0
+                            ? tool.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[11px] text-muted-foreground/50"
+                                >
+                                  #{tag}
+                                </span>
+                              ))
+                            : null}
+                          {lastUsed ? (
+                            <span className="text-[11px] text-muted-foreground/40">
+                              Used {lastUsed}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+                      {tool.notes ? (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <span className="flex size-7 items-center justify-center text-muted-foreground/50">
+                              <NotePencil size={13} />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-[200px] truncate">
+                              {tool.notes}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : null}
+
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() =>
+                              removeToolFromCollection(collection.id, tool.id)
+                            }
+                            aria-label={`Remove ${tool.name}`}
+                          >
+                            <Minus size={14} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -476,7 +596,7 @@ export function CollectionDetailsPage() {
           <div className="border border-dashed bg-muted/20 px-6 py-10 text-center">
             <p className="text-sm font-medium">No matching tools found</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Try a different name, domain, or tag for “{query}”.
+              Try a different name, domain, or tag for &ldquo;{query}&rdquo;.
             </p>
           </div>
         ) : allToolsAlreadyAdded ? (
@@ -491,45 +611,128 @@ export function CollectionDetailsPage() {
         ) : (
           <div className="overflow-hidden border bg-background">
             <div className="divide-y">
-              {availableTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium">
-                        {tool.name}
-                      </p>
-                      {tool.category ? (
-                        <Badge
-                          variant="secondary"
-                          className="hidden rounded-none text-[11px] sm:inline-flex"
-                        >
-                          {tool.category}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {tool.domain || "Unknown domain"}
-                    </p>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 shrink-0 rounded-none px-2 text-xs hover:bg-muted"
-                    onClick={() => addToolToCollection(collection.id, tool.id)}
+              {availableTools.map((tool) => {
+                const favicon = getFaviconUrl(tool);
+                const lastUsed = tool.lastUsedAt
+                  ? formatRelativeDate(tool.lastUsedAt)
+                  : null;
+                return (
+                  <div
+                    key={tool.id}
+                    className="group flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
                   >
-                    <Plus size={12} className="mr-1.5" />
-                    Add
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div
+                        className="mt-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
+                        onClick={() => handleOpenTool(tool)}
+                      >
+                        {favicon ? (
+                          <img src={favicon} alt="" className="size-5" />
+                        ) : (
+                          <Globe className="size-4 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="truncate text-sm font-medium underline-offset-2 hover:underline"
+                            onClick={() => handleOpenTool(tool)}
+                            title={`Open ${tool.name}`}
+                          >
+                            {tool.name}
+                          </button>
+                          {tool.domain ? (
+                            <span className="hidden shrink-0 text-xs text-muted-foreground/60 sm:inline">
+                              {tool.domain}
+                            </span>
+                          ) : null}
+                          {tool.category ? (
+                            <Badge
+                              variant="secondary"
+                              className="hidden shrink-0 rounded-none text-[11px] sm:inline-flex"
+                            >
+                              {tool.category}
+                            </Badge>
+                          ) : null}
+                        </div>
+
+                        {tool.description ? (
+                          <p className="line-clamp-1 text-xs text-muted-foreground/70">
+                            {tool.description}
+                          </p>
+                        ) : null}
+
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                          {tool.tags && tool.tags.length > 0
+                            ? tool.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="text-[11px] text-muted-foreground/50"
+                                >
+                                  #{tag}
+                                </span>
+                              ))
+                            : null}
+                          {lastUsed ? (
+                            <span className="text-[11px] text-muted-foreground/40">
+                              Used {lastUsed}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
+                      {tool.notes ? (
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <span className="flex size-7 items-center justify-center text-muted-foreground/50">
+                              <NotePencil size={13} />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-[200px] truncate">
+                              {tool.notes}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : null}
+
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                            onClick={() =>
+                              addToolToCollection(collection.id, tool.id)
+                            }
+                            aria-label={`Add ${tool.name}`}
+                          >
+                            <Plus size={14} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Add</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
       </section>
+
+      <WorkspaceFlow
+        state={workspace.state}
+        result={workspace.result}
+        onContinue={workspace.continue}
+        onRetry={workspace.retry}
+        onOpenIndividually={workspace.openIndividually}
+        onCancel={workspace.cancel}
+      />
     </div>
   );
 }

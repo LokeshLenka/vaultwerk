@@ -12,8 +12,8 @@ import {
 } from "./ui/sheet";
 import { cn } from "../lib/utils";
 import { GitHubStarsButton } from "./github-stars-button";
-import LogoLightTheme from "../../public/vaultwerk-light-logo.png";
-import LogoDarkTheme from "../../public/vaultwerk-dark-logo.png";
+// import LogoLightTheme from "../assets/vaultwerk-new.png";
+import LogoDarkTheme from "../assets/vaultwerk-new.png";
 
 interface NavItem {
   title: string;
@@ -46,19 +46,10 @@ export function Navbar() {
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100"
+          className="flex items-center text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 align-center border-2 border-white"
         >
-          <img
-            src={LogoLightTheme}
-            alt="ValutWerk Logo"
-            className="h-10 w-10 bg-black block dark:hidden"
-          />{" "}
-          <img
-            src={LogoDarkTheme}
-            alt="ValutWerk Logo"
-            className="h-10 w-10 dark:bg-white hidden dark:block"
-          />
-          <span className="font-brand">ValutWerk</span>
+          <img src={LogoDarkTheme} alt="ValutWerk Logo" className="w-10 h-10" />
+          <span className="font-brand align-center py-auto">VaultWerk</span>
           <Badge
             variant="outline"
             className="ml-1 px-1.5 text-xs border-green-500 text-green-500"
