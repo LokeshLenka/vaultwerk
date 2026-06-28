@@ -7,9 +7,6 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import LibraryPage from "./pages/tool/Library";
 import { CollectionsPage } from "./pages/collection/CollectionsPage";
 import { CollectionDetailsPage } from "./pages/collection/CollectionDetailsPage";
-import SitesPage from "./pages/sites/SitesPage";
-import SiteDetailsPage from "./pages/sites/SiteDetailsPage";
-import WorkspaceSettingsPage from "./pages/settings/WorkspaceSettingsPage";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { Toaster } from "sonner";
@@ -19,7 +16,6 @@ import {
   Info,
   WarningCircle,
   Spinner,
-  X,
 } from "@phosphor-icons/react";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -73,9 +69,6 @@ function App() {
             <Route path="library" element={<LibraryPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:id" element={<CollectionDetailsPage />} />
-            <Route path="sites" element={<SitesPage />} />
-            <Route path="sites/:id" element={<SiteDetailsPage />} />
-            <Route path="settings" element={<WorkspaceSettingsPage />} />
           </Route>
         </Routes>
       </TooltipProvider>
