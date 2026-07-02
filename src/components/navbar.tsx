@@ -46,7 +46,7 @@ export function Navbar() {
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 align-center border-2 border-white"
+          className="flex items-center text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 align-center"
         >
           <img src={LogoDarkTheme} alt="ValutWerk Logo" className="w-10 h-10" />
           <span className="font-brand align-center py-auto">VaultWerk</span>
@@ -83,7 +83,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {/* GitHub Stars — hidden on mobile to keep header clean */}
           <div className="hidden sm:block">
-            <GitHubStarsButton username="LokeshLenka" repo="valutwerk" />
+            <GitHubStarsButton username="LokeshLenka" repo="vaultwerk" />
           </div>
           <Link to={"/dashboard/library"}>
             <Button>Get started</Button>
