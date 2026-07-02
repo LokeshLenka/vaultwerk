@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 .vercel
 .env*.local
+
+# Session / draft files
+session-*.md
+VaultWerk-Resume-Draft.md
+
+# opencode skills / config
+.opencode/
