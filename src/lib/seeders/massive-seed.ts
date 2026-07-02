@@ -7,7 +7,6 @@ import { syncAllSites } from "../services/site-sync-service";
 import { TOOL_SEED_DATA } from "./data/tool-data";
 import type { ToolSeedEntry } from "./data/tool-data";
 import { COLLECTION_SEED_DATA } from "./data/collection-data";
-import type { CollectionSeedEntry } from "./data/collection-data";
 
 function shuffle<T>(items: T[]) {
   const copy = [...items];

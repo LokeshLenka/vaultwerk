@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "../../ui/dialog";
 import { Button } from "../../ui/button";
-import { Plus, FloppyDisk, Trash } from "@phosphor-icons/react";
+import { Plus, FloppyDisk } from "@phosphor-icons/react";
 import type { ToolRecord } from "../../../lib/types/tool";
 import {
   createTool,
