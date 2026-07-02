@@ -2,6 +2,7 @@ import {
   ChartBar,
   BooksIcon,
   StackIcon,
+  GlobeHemisphereWest,
   CompassIcon,
   GearIcon,
   ArrowLineLeftIcon,
@@ -20,6 +21,7 @@ export const primaryNavItems: NavItem[] = [
 
 export const pageNavItems: NavItem[] = [
   { label: "Library", href: "/dashboard/library", icon: BooksIcon },
+  { label: "Sites", href: "/dashboard/sites", icon: GlobeHemisphereWest },
   { label: "Collections", href: "/dashboard/collections", icon: StackIcon },
   { label: "Discover", href: "/dashboard/discover", icon: CompassIcon },
   { label: "Settings", href: "/dashboard/settings", icon: GearIcon },

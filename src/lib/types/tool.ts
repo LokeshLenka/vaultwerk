@@ -14,6 +14,8 @@ export type ToolRecord = {
   description?: string | null;
   notes?: string | null;
 
+  siteId?: string | null;
+
   isFavorite: boolean;
 
   createdAt: string;

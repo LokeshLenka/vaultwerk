@@ -18,6 +18,9 @@ import {
   Spinner,
 } from "@phosphor-icons/react";
 import { Analytics } from "@vercel/analytics/react";
+import SitesPage from "./pages/sites/SitesPage";
+import SiteDetailsPage from "./pages/sites/SiteDetailsPage";
+import { DocsPage } from "./pages/docs/DocsPage";
 
 function App() {
   const location = useLocation();
@@ -62,6 +65,7 @@ function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
+            <Route path="/docs" element={<DocsPage />} />
             <Route path="/timeline" element={<Timeline />} />
           </Route>
           <Route path="/dashboard" element={<DashboardLayout />}>
@@ -69,6 +73,8 @@ function App() {
             <Route path="library" element={<LibraryPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:id" element={<CollectionDetailsPage />} />
+            <Route path="sites" element={<SitesPage />} />
+            <Route path="sites/:id" element={<SiteDetailsPage />} />
           </Route>
         </Routes>
       </TooltipProvider>

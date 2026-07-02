@@ -29,6 +29,12 @@ export const AppHeader = () => {
     [collectionId],
   );
 
+  const siteId = segments[1] === "sites" && segments[2] ? segments[2] : null;
+  const site = useLiveQuery(
+    () => (siteId ? db.sites.get(siteId) : undefined),
+    [siteId],
+  );
+
   const crumbs: { label: string; to?: string }[] = [];
 
   if (segments.length <= 1) {
@@ -40,6 +46,8 @@ export const AppHeader = () => {
 
       if (isLast && segment === collectionId) {
         crumbs.push({ label: collection?.name ?? "..." });
+      } else if (isLast && segment === siteId) {
+        crumbs.push({ label: site?.displayName ?? "..." });
       } else {
         crumbs.push({
           label: formatSegment(segment),

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { seedTools } from "./seed-tools";
+import { seedAllData } from "../massive-seed";
 
 type SeedToolsButtonProps = {
   onDone?: () => void | Promise<void>;
@@ -7,7 +7,7 @@ type SeedToolsButtonProps = {
 
 export function SeedToolsButton({ onDone }: SeedToolsButtonProps) {
   const handleSeed = async () => {
-    await seedTools({ count: 20, skipDuplicates: true });
+    await seedAllData({ clearExisting: true, skipDuplicates: true });
     await onDone?.();
   };
 

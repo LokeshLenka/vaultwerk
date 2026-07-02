@@ -16,6 +16,7 @@ import { db } from "../db";
 import { normalizeUrl } from "../helpers/nomalize-url";
 import { findToolByNormalizedUrl } from "../queries/tools/queries";
 import type { ToolRecord } from "../types/tool";
+import { syncTool, removeToolFromSite } from "./site-sync-service";
 
 /**
  * Input used to create a new tool in the local VaultWerk library.
@@ -101,6 +102,7 @@ export async function createTool(input: CreateToolInput) {
     notes: input.notes ?? null,
 
     isFavorite: input.isFavorite ?? false,
+    siteId: null,
 
     createdAt: now,
     updatedAt: now,
@@ -108,6 +110,7 @@ export async function createTool(input: CreateToolInput) {
   };
 
   await db.tools.add(record);
+  await syncTool(record.id);
 
   return {
     tool: record,
@@ -167,6 +170,10 @@ export async function updateTool(id: string, updates: UpdateToolInput) {
 
   await db.tools.put(nextRecord);
 
+  if (nextUrl !== current.url) {
+    await syncTool(id);
+  }
+
   return nextRecord;
 }
 
@@ -176,6 +183,7 @@ export async function updateTool(id: string, updates: UpdateToolInput) {
  * This is a hard delete from the local database.
  */
 export async function deleteTool(id: string) {
+  await removeToolFromSite(id);
   await db.tools.delete(id);
 }
 

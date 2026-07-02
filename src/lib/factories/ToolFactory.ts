@@ -116,6 +116,7 @@ export function createToolRecord(input: {
     tags: useSeed ? pickTags(input.name, input.category, input.toolType) : [],
 
     // notes: useSeed ? buildNotes(input.name) : null,
+    siteId: null,
     isFavorite: useSeed ? randomBool(0.3) : false,
     lastUsedAt: useSeed && wasUsed ? randomDateWithinDays(45) : null,
 
