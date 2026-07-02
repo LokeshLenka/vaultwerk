@@ -14,6 +14,7 @@ import {
   InputGroupInput,
 } from "../ui/input-group";
 import { Kbd } from "../ui/kbd";
+import { useSearchShortcut } from "@/hooks/use-search-shortcut";
 
 export default function ToolLibrary() {
   const [tools, setTools] = useState<ToolRecord[] | null>(null);
@@ -40,28 +41,18 @@ export default function ToolLibrary() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isModifier = e.ctrlKey || e.metaKey;
-      if (!isModifier) return;
-
-      const key = e.key.toLowerCase();
-
-      if (key === "a" && e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && e.shiftKey) {
         e.preventDefault();
         setSelectedTool(null);
         setSheetOpen(true);
-        return;
-      }
-
-      if (key === "k" && !e.shiftKey) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  useSearchShortcut(searchInputRef);
 
   const normalizedQuery = query.trim().toLowerCase();
 

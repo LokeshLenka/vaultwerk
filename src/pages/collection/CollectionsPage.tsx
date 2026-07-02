@@ -1,6 +1,11 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCollections } from "@/hooks/use-collections";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { UpsertCollectionDialog } from "@/components/collections/UpsertCollectionDialog";
 import { DeleteCollectionDialog } from "@/components/collections/DeleteCollectionDialog";
 import type { CollectionRecord } from "@/lib/types/collection";
@@ -14,6 +19,7 @@ import { Kbd } from "@/components/ui/kbd";
 import CollectionEmptyState from "@/components/collections/CollectionEmptyState";
 import CollectionCard from "@/components/collections/collection-card/CollectionCard";
 import { SeedCollectionsButton } from "@/lib/seeders/collection/seed-collections";
+import { useSearchShortcut } from "@/hooks/use-search-shortcut";
 
 export function CollectionsPage() {
   const collections = useCollections() ?? [];
@@ -22,6 +28,18 @@ export function CollectionsPage() {
   const [editing, setEditing] = useState<CollectionRecord | null>(null);
   const [deleting, setDeleting] = useState<CollectionRecord | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  useSearchShortcut(searchInputRef);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c" && !e.repeat) {
+        e.preventDefault();
+        setCreateOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const filteredCollections = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -146,6 +164,25 @@ export function CollectionsPage() {
       />
 
       <SeedCollectionsButton />
+
+      <Tooltip>
+        <TooltipTrigger>
+          <Button
+            size="icon"
+            className="fixed bottom-8 right-8 z-10 size-12 shadow-xl sm:h-12 sm:w-auto sm:px-4"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus className="size-6" />
+            <span className="ml-2 hidden sm:inline">Add collection</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="flex items-center gap-1.5">
+          <span>New collection</span>
+          <Kbd>Ctrl</Kbd>
+          <Kbd>Shift</Kbd>
+          <Kbd>C</Kbd>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

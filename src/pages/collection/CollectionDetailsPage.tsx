@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
@@ -37,13 +38,25 @@ import {
   Wrench,
   Plus,
   Minus,
-  NotePencil,
   Stack,
   Toolbox,
   Trash,
 } from "@phosphor-icons/react";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useSearchShortcut } from "@/hooks/use-search-shortcut";
 import WorkspaceFlow from "@/components/workspace/WorkspaceFlow";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+
+function getShortUrl(tool: ToolRecord): string {
+  try {
+    const u = new URL(tool.url);
+    const path = u.pathname.replace(/\/$/, "");
+    return tool.domain + path;
+  } catch {
+    return tool.domain;
+  }
+}
 
 function formatRelativeDate(value?: string | null) {
   if (!value) return null;
@@ -91,6 +104,7 @@ export function CollectionDetailsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const workspace = useWorkspace();
 
   const collection = useLiveQuery(() => db.collections.get(id), [id]);
@@ -116,6 +130,8 @@ export function CollectionDetailsPage() {
       descriptionInputRef.current?.select();
     }
   }, [editingField]);
+
+  useSearchShortcut(searchInputRef);
 
   const selectedTools = useMemo(() => {
     if (!collection) return [] as ToolRecord[];
@@ -214,6 +230,7 @@ export function CollectionDetailsPage() {
     try {
       setIsDeleting(true);
       await db.collections.delete(collection.id);
+      toast.success("Collection deleted");
       navigate("/dashboard/collections");
     } finally {
       setIsDeleting(false);
@@ -246,7 +263,7 @@ export function CollectionDetailsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4 border-b pb-6">
+      <div className="space-y-4 pb-6">
         <Button
           size="sm"
           variant="ghost"
@@ -261,7 +278,7 @@ export function CollectionDetailsPage() {
           </Link>
         </Button>
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0 flex-1 space-y-2">
             {editingField === "name" ? (
               <Input
@@ -285,13 +302,22 @@ export function CollectionDetailsPage() {
                 aria-label="Collection name"
               />
             ) : (
-              <h1
-                className="cursor-text text-2xl font-semibold tracking-tight hover:text-foreground/80"
-                onDoubleClick={() => setEditingField("name")}
-                title="Double-click to edit"
-              >
-                {collection.name}
-              </h1>
+              <Tooltip>
+                <TooltipTrigger
+                  className="cursor-text"
+                  render={
+                    <h1
+                      className="text-2xl font-semibold tracking-tight hover:text-foreground/80"
+                      onDoubleClick={() => setEditingField("name")}
+                    />
+                  }
+                >
+                  {collection.name}
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  Double-click to edit
+                </TooltipContent>
+              </Tooltip>
             )}
 
             {editingField === "description" ? (
@@ -317,24 +343,31 @@ export function CollectionDetailsPage() {
                 aria-label="Collection description"
               />
             ) : (
-              <p
-                className="cursor-text text-sm leading-6 text-muted-foreground hover:text-foreground/80"
-                onDoubleClick={() => setEditingField("description")}
-                title="Double-click to edit"
-              >
-                {collection.description || "No description added."}
-              </p>
+              <Tooltip>
+                <TooltipTrigger
+                  className="cursor-text"
+                  render={
+                    <p
+                      className="text-sm leading-6 text-muted-foreground hover:text-foreground/80"
+                      onDoubleClick={() => setEditingField("description")}
+                    />
+                  }
+                >
+                  {collection.description || "No description added."}
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  Double-click to edit
+                </TooltipContent>
+              </Tooltip>
             )}
-
-            <p className="text-xs text-muted-foreground">
-              Double-click name or description to edit.
-            </p>
           </div>
 
-          <div className="flex items-start gap-2">
-            <Badge variant="secondary" className="mt-1 shrink-0 rounded-none">
-              {selectedTools.length}{" "}
-              {selectedTools.length === 1 ? "tool" : "tools"}
+          <div className="flex items-center justify-end gap-2">
+            <Badge variant="secondary" className="shrink-0 rounded-none">
+              <span>
+                {selectedTools.length}{" "}
+                {selectedTools.length === 1 ? "tool" : "tools"}
+              </span>
             </Badge>
 
             <AlertDialog>
@@ -342,10 +375,10 @@ export function CollectionDetailsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 rounded-none px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="self-end h-8 rounded-none px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <Trash size={14} className="mr-1.5" />
-                  Delete
+                  <Trash size={14} className="sm:mr-1.5" />
+                  <span className="">Delete</span>
                 </Button>
               </AlertDialogTrigger>
 
@@ -375,10 +408,12 @@ export function CollectionDetailsPage() {
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground -mt-10 sm:-mt-0">
           Created {formatRelativeDate(collection.createdAt)}
         </p>
       </div>
+
+      <Separator />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -388,23 +423,19 @@ export function CollectionDetailsPage() {
 
           <div className="flex items-center gap-1">
             {selectedTools.length > 0 ? (
-              <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={handleOpenAll}
-                    aria-label={`Open all ${selectedTools.length} tools in new tabs`}
-                  >
-                    <ArrowSquareOut size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={handleOpenAll}
+                aria-label={`Open all ${selectedTools.length} tools in new tabs`}
+              >
+                <ArrowSquareOut size={14} className="sm:mr-1.5" />
+                <span className="hidden sm:inline">
                   Open all {selectedTools.length} tool
                   {selectedTools.length !== 1 ? "s" : ""}
-                </TooltipContent>
-              </Tooltip>
+                </span>
+              </Button>
             ) : null}
           </div>
         </div>
@@ -425,21 +456,18 @@ export function CollectionDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden border bg-background">
-            <div className="divide-y">
-              {selectedTools.map((tool) => {
-                const favicon = getFaviconUrl(tool);
-                const lastUsed = tool.lastUsedAt
-                  ? formatRelativeDate(tool.lastUsedAt)
-                  : null;
-                return (
-                  <div
-                    key={tool.id}
-                    className="group flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {selectedTools.map((tool) => {
+              const favicon = getFaviconUrl(tool);
+              return (
+                <div
+                  key={tool.id}
+                  className="group relative rounded-lg border bg-card p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <div
-                        className="mt-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
+                        className="flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
                         onClick={() => handleOpenTool(tool)}
                       >
                         {favicon ? (
@@ -448,74 +476,23 @@ export function CollectionDetailsPage() {
                           <Globe className="size-4 text-muted-foreground" />
                         )}
                       </div>
-
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="truncate text-sm font-medium underline-offset-2 hover:underline"
-                            onClick={() => handleOpenTool(tool)}
-                            title={`Open ${tool.name}`}
-                          >
-                            {tool.name}
-                          </button>
-                          {tool.domain ? (
-                            <span className="hidden shrink-0 text-xs text-muted-foreground/60 sm:inline">
-                              {tool.domain}
-                            </span>
-                          ) : null}
-                          {tool.category ? (
-                            <Badge
-                              variant="secondary"
-                              className="hidden shrink-0 rounded-none text-[11px] sm:inline-flex"
-                            >
-                              {tool.category}
-                            </Badge>
-                          ) : null}
-                        </div>
-
-                        {tool.description ? (
-                          <p className="line-clamp-1 text-xs text-muted-foreground/70">
-                            {tool.description}
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          className="truncate text-sm font-medium underline-offset-2 hover:underline"
+                          onClick={() => handleOpenTool(tool)}
+                          title={`Open ${tool.name}`}
+                        >
+                          {tool.name}
+                        </button>
+                        {tool.domain ? (
+                          <p className="truncate text-xs text-muted-foreground/90">
+                            {getShortUrl(tool)}
                           </p>
                         ) : null}
-
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          {tool.tags && tool.tags.length > 0
-                            ? tool.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[11px] text-muted-foreground/50"
-                                >
-                                  #{tag}
-                                </span>
-                              ))
-                            : null}
-                          {lastUsed ? (
-                            <span className="text-[11px] text-muted-foreground/40">
-                              Used {lastUsed}
-                            </span>
-                          ) : null}
-                        </div>
                       </div>
                     </div>
-
-                    <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
-                      {tool.notes ? (
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <span className="flex size-7 items-center justify-center text-muted-foreground/50">
-                              <NotePencil size={13} />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-[200px] truncate">
-                              {tool.notes}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : null}
-
+                    <div className="flex shrink-0 items-center gap-0.5">
                       <Tooltip>
                         <TooltipTrigger>
                           <Button
@@ -530,16 +507,19 @@ export function CollectionDetailsPage() {
                             <Minus size={14} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Remove</TooltipContent>
+                        <TooltipContent side="left">Remove</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
+
+      {/* <hr className="my-6 border-muted/40" /> */}
+      <Separator />
 
       <section className="space-y-4">
         <div className="space-y-1">
@@ -557,21 +537,26 @@ export function CollectionDetailsPage() {
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <Input
+            ref={searchInputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, domain, or tag..."
-            className="rounded-none pl-9 pr-9"
+            className="rounded-none pl-9 pr-24"
           />
-          {query ? (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Clear search"
-            >
-              <X size={14} />
-            </button>
-          ) : null}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+            <Kbd className="hidden sm:inline-flex">Ctrl</Kbd>
+            <Kbd className="hidden sm:inline-flex">K</Kbd>
+          </div>
         </div>
 
         {!hasAnyToolsInDatabase ? (
@@ -609,21 +594,18 @@ export function CollectionDetailsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden border bg-background">
-            <div className="divide-y">
-              {availableTools.map((tool) => {
-                const favicon = getFaviconUrl(tool);
-                const lastUsed = tool.lastUsedAt
-                  ? formatRelativeDate(tool.lastUsedAt)
-                  : null;
-                return (
-                  <div
-                    key={tool.id}
-                    className="group flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {availableTools.map((tool) => {
+              const favicon = getFaviconUrl(tool);
+              return (
+                <div
+                  key={tool.id}
+                  className="group relative rounded-lg border bg-card p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
                       <div
-                        className="mt-0.5 flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
+                        className="flex size-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border bg-muted/40"
                         onClick={() => handleOpenTool(tool)}
                       >
                         {favicon ? (
@@ -632,74 +614,23 @@ export function CollectionDetailsPage() {
                           <Globe className="size-4 text-muted-foreground" />
                         )}
                       </div>
-
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="truncate text-sm font-medium underline-offset-2 hover:underline"
-                            onClick={() => handleOpenTool(tool)}
-                            title={`Open ${tool.name}`}
-                          >
-                            {tool.name}
-                          </button>
-                          {tool.domain ? (
-                            <span className="hidden shrink-0 text-xs text-muted-foreground/60 sm:inline">
-                              {tool.domain}
-                            </span>
-                          ) : null}
-                          {tool.category ? (
-                            <Badge
-                              variant="secondary"
-                              className="hidden shrink-0 rounded-none text-[11px] sm:inline-flex"
-                            >
-                              {tool.category}
-                            </Badge>
-                          ) : null}
-                        </div>
-
-                        {tool.description ? (
-                          <p className="line-clamp-1 text-xs text-muted-foreground/70">
-                            {tool.description}
+                      <div className="min-w-0">
+                        <button
+                          type="button"
+                          className="truncate text-sm font-medium underline-offset-2 hover:underline"
+                          onClick={() => handleOpenTool(tool)}
+                          title={`Open ${tool.name}`}
+                        >
+                          {tool.name}
+                        </button>
+                        {tool.domain ? (
+                          <p className="truncate text-xs text-muted-foreground/90">
+                            {getShortUrl(tool)}
                           </p>
                         ) : null}
-
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          {tool.tags && tool.tags.length > 0
-                            ? tool.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="text-[11px] text-muted-foreground/50"
-                                >
-                                  #{tag}
-                                </span>
-                              ))
-                            : null}
-                          {lastUsed ? (
-                            <span className="text-[11px] text-muted-foreground/40">
-                              Used {lastUsed}
-                            </span>
-                          ) : null}
-                        </div>
                       </div>
                     </div>
-
-                    <div className="flex shrink-0 items-center gap-0.5 pt-0.5">
-                      {tool.notes ? (
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <span className="flex size-7 items-center justify-center text-muted-foreground/50">
-                              <NotePencil size={13} />
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-[200px] truncate">
-                              {tool.notes}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : null}
-
+                    <div className="flex shrink-0 items-center gap-0.5">
                       <Tooltip>
                         <TooltipTrigger>
                           <Button
@@ -714,13 +645,13 @@ export function CollectionDetailsPage() {
                             <Plus size={14} />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Add</TooltipContent>
+                        <TooltipContent side="left">Add</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
