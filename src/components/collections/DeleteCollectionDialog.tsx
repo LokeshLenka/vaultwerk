@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteCollection } from "@/lib/services/collection-service";
 import type { CollectionRecord } from "@/lib/types/collection";
+import { toast } from "sonner";
 
 interface DeleteCollectionDialogProps {
   collection: CollectionRecord | null;
@@ -25,6 +26,7 @@ export function DeleteCollectionDialog({
   async function handleDelete() {
     if (!collection) return;
     await deleteCollection(collection.id);
+    toast.success("Collection deleted");
     onOpenChange(false);
   }
 
