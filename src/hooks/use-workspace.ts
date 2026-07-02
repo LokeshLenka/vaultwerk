@@ -17,12 +17,15 @@ export interface WorkspaceResult {
 }
 
 const PERMISSION_KEY = "workspacePermissionAcknowledged";
+const MAX_TABS = 20;
 
 function openAll(tools: ToolItem[]): WorkspaceResult {
   const opened: ToolItem[] = [];
   const blocked: ToolItem[] = [];
 
-  for (const tool of tools) {
+  const toOpen = tools.slice(0, MAX_TABS);
+
+  for (const tool of toOpen) {
     try {
       const win = window.open(tool.url, "_blank");
       if (!win) {
@@ -35,7 +38,7 @@ function openAll(tools: ToolItem[]): WorkspaceResult {
     }
   }
 
-  return { opened, blocked, total: tools.length };
+  return { opened, blocked, total: toOpen.length };
 }
 
 export function useWorkspace() {
@@ -68,14 +71,25 @@ export function useWorkspace() {
     if (toolsToOpen.length === 0 || openingRef.current) return;
     openingRef.current = true;
 
+    const totalRequested = toolsToOpen.length;
+    const batch = toolsToOpen.slice(0, MAX_TABS);
+    const remaining = totalRequested - batch.length;
+
     toolsRef.current = toolsToOpen;
-    setTools(toolsToOpen);
+    setTools(batch);
     setResult(null);
 
     const acknowledged = permissionRef.current === true;
 
+    if (remaining > 0) {
+      toast.warning("Tab limit reached", {
+        description: `Opening first ${batch.length} of ${totalRequested} tools.`,
+        duration: 4000,
+      });
+    }
+
     if (acknowledged) {
-      const r = openAll(toolsToOpen);
+      const r = openAll(batch);
 
       if (r.blocked.length === 0) {
         track("workspace_popup_success");
@@ -106,11 +120,22 @@ export function useWorkspace() {
     if (toolsToOpen.length === 0 || openingRef.current) return;
     openingRef.current = true;
 
+    const totalRequested = toolsToOpen.length;
+    const batch = toolsToOpen.slice(0, MAX_TABS);
+    const remaining = totalRequested - batch.length;
+
     track("workspace_continue");
     setSetting(PERMISSION_KEY, true).catch(() => {});
     permissionRef.current = true;
 
-    const r = openAll(toolsToOpen);
+    if (remaining > 0) {
+      toast.warning("Tab limit reached", {
+        description: `Opening first ${batch.length} of ${totalRequested} tools.`,
+        duration: 4000,
+      });
+    }
+
+    const r = openAll(batch);
 
     if (r.blocked.length === 0) {
       track("workspace_popup_success");
@@ -136,9 +161,20 @@ export function useWorkspace() {
     if (toolsToOpen.length === 0 || openingRef.current) return;
     openingRef.current = true;
 
+    const totalRequested = toolsToOpen.length;
+    const batch = toolsToOpen.slice(0, MAX_TABS);
+    const remaining = totalRequested - batch.length;
+
     track("workspace_retry");
 
-    const r = openAll(toolsToOpen);
+    if (remaining > 0) {
+      toast.warning("Tab limit reached", {
+        description: `Opening first ${batch.length} of ${totalRequested} tools.`,
+        duration: 4000,
+      });
+    }
+
+    const r = openAll(batch);
 
     if (r.blocked.length === 0) {
       track("workspace_popup_success");
