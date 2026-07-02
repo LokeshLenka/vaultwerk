@@ -1,16 +1,14 @@
-// tool-sheet/ToolSheet.tsx
 import { useEffect, useMemo, useState } from "react";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../../ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../ui/dialog";
 import { Button } from "../../ui/button";
-import { Plus, FloppyDisk } from "@phosphor-icons/react";
+import { Plus, FloppyDisk, Trash } from "@phosphor-icons/react";
 import type { ToolRecord } from "../../../lib/types/tool";
 import {
   createTool,
@@ -18,9 +16,11 @@ import {
   updateTool,
 } from "../../../lib/services/tool-service";
 import ToolSheetForm, { type ToolFormState } from "./ToolSheetForm";
+import { useUrlDuplicateCheck } from "@/hooks/use-url-duplicate-check";
+import { Separator } from "../../ui/separator";
+import { toast } from "sonner";
 import ToolDeleteDialog from "./ToolDeleteDialog";
 import { cn } from "@/lib/utils";
-import { useUrlDuplicateCheck } from "@/hooks/use-url-duplicate-check";
 
 const emptyForm: ToolFormState = {
   name: "",
@@ -60,17 +60,9 @@ export default function ToolSheet({
   );
 
   const setOpen = (value: boolean) => {
-    if (!value) {
-      setDeleteDialogOpen(false);
-    }
-
     onOpenChange?.(value);
     if (open === undefined) setInternalOpen(value);
   };
-
-  useEffect(() => {
-    setDeleteDialogOpen(false);
-  }, [tool?.id]);
 
   useEffect(() => {
     if (!controlledOpen) {
@@ -132,8 +124,10 @@ export default function ToolSheet({
     try {
       if (isEdit && tool?.id) {
         await updateTool(tool.id, payload);
+        toast.success("Tool updated");
       } else {
         await createTool(payload);
+        toast.success("Tool added");
       }
 
       await onSuccess?.();
@@ -150,6 +144,7 @@ export default function ToolSheet({
     setDeleting(true);
     try {
       await deleteTool(tool.id);
+      toast.success("Tool deleted");
       setDeleteDialogOpen(false);
       await onSuccess?.();
       setOpen(false);
@@ -159,9 +154,9 @@ export default function ToolSheet({
   }
 
   return (
-    <Sheet open={controlledOpen} onOpenChange={setOpen}>
+    <Dialog open={controlledOpen} onOpenChange={setOpen}>
       {!tool ? (
-        <SheetTrigger  >
+        <DialogTrigger>
           <Button
             size="icon"
             className="fixed bottom-8 right-8 z-10 size-12 shadow-xl sm:h-12 sm:w-auto sm:px-4"
@@ -169,25 +164,25 @@ export default function ToolSheet({
             <Plus className="size-6" />
             <span className="ml-2 hidden sm:inline">Add tool</span>
           </Button>
-        </SheetTrigger>
+        </DialogTrigger>
       ) : null}
 
-      <SheetContent
+      <DialogContent
         className={cn(
-          "min-w-xs sm:min-w-lg w-full overflow-y-auto px-4",
+          "sm:max-w-lg max-h-[90dvh] overflow-y-auto",
           deleteDialogOpen && "pointer-events-none blur-sm",
         )}
       >
-        <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit tool" : "Add tool"}</SheetTitle>
-          <SheetDescription>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? "Edit tool" : "Add tool"}</DialogTitle>
+          <DialogDescription>
             {isEdit
-              ? "Update the important details. Everything else is handled automatically."
+              ? "Update the essentials. We take care of the rest."
               : "Save a tool quickly now and organize it later."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <ToolSheetForm
             form={form}
             parsedTags={parsedTags}
@@ -197,30 +192,45 @@ export default function ToolSheet({
             urlIsChecking={isChecking}
           />
 
-          <SheetFooter>
-            <Button
-              type="submit"
-              disabled={saving || isDuplicate || isChecking}
-              className="w-full sm:w-auto"
-            >
-              <FloppyDisk className="mr-2 size-4" />
-              {saving ? "Saving..." : isEdit ? "Save changes" : "Save tool"}
-            </Button>
-          </SheetFooter>
-
-          <div className="mb-4">
+          {isEdit ? <Separator /> : null}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
             {isEdit ? (
-              <ToolDeleteDialog
-                toolName={tool?.name ?? "this tool"}
-                deleting={deleting}
-                onDelete={handleDelete}
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-              />
+              <div className="w-full sm:w-auto">
+                <ToolDeleteDialog
+                  toolName={tool?.name ?? "this tool"}
+                  deleting={deleting}
+                  onDelete={handleDelete}
+                  open={deleteDialogOpen}
+                  onOpenChange={setDeleteDialogOpen}
+                />
+              </div>
             ) : null}
+            {isEdit ? (
+              <div className="pb-3">
+                <Separator className="sm:hidden" />
+              </div>
+            ) : null}
+            <div className="flex flex-1 flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving || isDuplicate || isChecking}
+                className="w-full sm:w-auto"
+              >
+                <FloppyDisk className="mr-2 size-4" />
+                {saving ? "Saving..." : isEdit ? "Save changes" : "Save tool"}
+              </Button>
+            </div>
           </div>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
