@@ -20,7 +20,7 @@ import {
 import { Analytics } from "@vercel/analytics/react";
 import SitesPage from "./pages/sites/SitesPage";
 import SiteDetailsPage from "./pages/sites/SiteDetailsPage";
-import { DocsPage } from "./pages/docs/DocsPage";
+// import { DocsPage } from "./pages/docs/DocsPage";
 
 function App() {
   const location = useLocation();
@@ -65,7 +65,7 @@ function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="/docs" element={<DocsPage />} />
+            {/* <Route path="/docs" element={<DocsPage />} /> */}
             <Route path="/timeline" element={<Timeline />} />
           </Route>
           <Route path="/dashboard" element={<DashboardLayout />}>
