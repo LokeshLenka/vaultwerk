@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { getSiteById, getSiteTools } from "@/lib/services/site-service";
+import { useApiDoc, useApiList } from "@/lib/api/useApi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -104,12 +104,8 @@ export default function SiteDetailsPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   useSearchShortcut(searchInputRef);
 
-  const site = useLiveQuery(() => db.sites.get(id), [id]);
-  const allTools =
-    useLiveQuery(
-      () => (id ? db.tools.where("siteId").equals(id).toArray() : []),
-      [id],
-    ) ?? [];
+  const { data: site } = useApiDoc(() => getSiteById(id), [id]);
+  const { data: allTools } = useApiList(() => getSiteTools(id), [id]);
 
   const tools = useMemo(() => {
     const q = query.trim().toLowerCase();

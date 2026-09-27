@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 import { cn } from "../lib/utils";
+import { useAuth } from "@/lib/auth/useAuth";
 import { GitHubStarsButton } from "./github-stars-button";
 // import LogoLightTheme from "../assets/vaultwerk-new.png";
 import LogoDarkTheme from "../assets/vaultwerk-new.png";
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
 export function Navbar() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const { user, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 h-16 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">
@@ -88,6 +90,16 @@ export function Navbar() {
           <Link to={"/dashboard/library"}>
             <Button>Get started</Button>
           </Link>
+          {!loading &&
+            (user ? (
+              <Link to="/dashboard">
+                <Button variant="outline">Open dashboard</Button>
+              </Link>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline">Sign in</Button>
+              </Link>
+            ))}
 
           {/* <ModeToggle /> */}
 

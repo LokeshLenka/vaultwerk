@@ -1,6 +1,14 @@
-import { db } from "../db";
-import { createToolRecord } from "../factories/ToolFactory";
-import type { CollectionRecord } from "../types/collection";
+import {
+  createCollection,
+  deleteCollection,
+  listCollections,
+  updateCollection,
+} from "../services/collection-service";
+import {
+  createTool,
+  deleteTool,
+  listTools,
+} from "../services/tool-service";
 import { findToolByNormalizedUrl } from "../queries/tools/queries";
 import { normalizeUrl } from "../helpers/nomalize-url";
 import { syncAllSites } from "../services/site-sync-service";
@@ -44,6 +52,17 @@ function findToolsForCollection(
   return ids.length > 0 ? ids : [];
 }
 
+async function clearLibrary() {
+  const [tools, collections] = await Promise.all([
+    listTools(),
+    listCollections(),
+  ]);
+  await Promise.all([
+    ...tools.map((tool) => deleteTool(tool.id)),
+    ...collections.map((collection) => deleteCollection(collection.id)),
+  ]);
+}
+
 export async function seedAllData(options?: {
   count?: number;
   clearExisting?: boolean;
@@ -54,9 +73,7 @@ export async function seedAllData(options?: {
   const skipDuplicates = options?.skipDuplicates ?? true;
 
   if (clearExisting) {
-    await db.tools.clear();
-    await db.collections.clear();
-    await db.sites.clear();
+    await clearLibrary();
   }
 
   const selectedTemplates = shuffle(TOOL_SEED_DATA).slice(
@@ -81,25 +98,20 @@ export async function seedAllData(options?: {
         }
       }
 
-      const id = crypto.randomUUID();
-      const record = createToolRecord({
-        id,
+      // The API normalizes, dedupes, and attaches site grouping.
+      const result = await createTool({
         name: template.name,
-        url: normalized.url,
-        normalizedUrl: normalized.normalizedUrl,
-        domain: normalized.domain,
+        url: template.url,
         category: template.category,
-        toolType: template.toolType,
-        source: "seed",
-        seed: true,
+        description: template.description,
+        tags: template.tags,
       });
-
-      record.description = template.description;
-      record.tags = template.tags;
-
-      await db.tools.add(record);
-      inserted.push(record);
-      urlToId.set(template.url, id);
+      if (!result.created) {
+        skipped.push(result.tool.normalizedUrl);
+      } else {
+        inserted.push(result.tool);
+      }
+      urlToId.set(template.url, result.tool.id);
     } catch (err) {
       console.warn(`Failed to seed tool "${template.name}":`, err);
       skipped.push(template.name);
@@ -108,7 +120,7 @@ export async function seedAllData(options?: {
 
   await syncAllSites();
 
-  const toolsFromDb = await db.tools.toArray();
+  const toolsFromDb = await listTools();
 
   const collectionInserted = [];
   const collectionSkipped = [];
@@ -130,17 +142,14 @@ export async function seedAllData(options?: {
               8,
             );
 
-      const now = new Date().toISOString();
-      const record: CollectionRecord = {
-        id: crypto.randomUUID(),
+      const record = await createCollection({
+        id: `seed-${template.name}`,
         name: template.name,
         description: template.description,
-        toolIds: finalToolIds,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      await db.collections.add(record);
+      });
+      if (finalToolIds.length > 0) {
+        await updateCollection(record.id, { toolIds: finalToolIds });
+      }
       collectionInserted.push(record);
     } catch (err) {
       console.warn(`Failed to seed collection "${template.name}":`, err);
@@ -157,7 +166,5 @@ export async function seedAllData(options?: {
 }
 
 export async function clearAllSeedData() {
-  await db.tools.clear();
-  await db.collections.clear();
-  await db.sites.clear();
+  await clearLibrary();
 }

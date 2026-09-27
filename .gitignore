@@ -29,5 +29,8 @@ dist-ssr
 session-*.md
 VaultWerk-Resume-Draft.md
 
+# Generated knowledge-graph output
+graphify-out/
+
 # opencode skills / config
 .opencode/

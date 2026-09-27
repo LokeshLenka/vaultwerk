@@ -1,4 +1,10 @@
-import { db } from "../../db";
+import {
+  createCollection,
+  deleteCollection,
+  listCollections,
+  updateCollection,
+} from "../../services/collection-service";
+import { listTools } from "../../services/tool-service";
 import type { CollectionRecord } from "@/lib/types/collection";
 
 type SeedCollectionTemplate = {
@@ -81,10 +87,11 @@ export async function seedCollections(options?: {
   const skipDuplicates = options?.skipDuplicates ?? true;
 
   if (clearExisting) {
-    await db.collections.clear();
+    const doomed = await listCollections();
+    await Promise.all(doomed.map((c) => deleteCollection(c.id)));
   }
 
-  const existingCollections = await db.collections.toArray();
+  const existingCollections = await listCollections();
   const existingNames = new Set(
     existingCollections.map((collection) =>
       normalizeCollectionName(collection.name),
@@ -98,9 +105,8 @@ export async function seedCollections(options?: {
 
   const inserted: CollectionRecord[] = [];
   const skipped: string[] = [];
-  const now = new Date().toISOString();
 
-  const tools = await db.tools.toArray();
+  const tools = await listTools();
   const toolIds = pickRandomIds(
     tools.map((tool) => tool.id),
     2,
@@ -115,16 +121,14 @@ export async function seedCollections(options?: {
       continue;
     }
 
-    const record: CollectionRecord = {
-      id: crypto.randomUUID(),
+    const record = await createCollection({
+      id: `seed-${normalizedName}`,
       name: template.name,
       description: template.description,
-      toolIds,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    await db.collections.add(record);
+    });
+    if (toolIds.length > 0) {
+      await updateCollection(record.id, { toolIds });
+    }
     inserted.push(record);
     existingNames.add(normalizedName);
   }
@@ -138,5 +142,6 @@ export async function seedCollections(options?: {
 }
 
 export async function clearSeedCollections() {
-  await db.collections.clear();
+  const doomed = await listCollections();
+  await Promise.all(doomed.map((c) => deleteCollection(c.id)));
 }

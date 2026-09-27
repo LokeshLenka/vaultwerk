@@ -18,17 +18,25 @@ function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
 
 export function GlobalLoader() {
   const location = useLocation();
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  // Adjust state during render (not in an effect): a pathname change means
+  // a navigation started, so show the transition loader.
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname);
     setLoading(true);
+  }
+
+  useEffect(() => {
+    if (!loading) return;
 
     const timer = setTimeout(() => {
       setLoading(false);
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [location.pathname]);
+  }, [loading]);
 
   return (
     <AnimatePresence>

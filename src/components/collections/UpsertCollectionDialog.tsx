@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { nanoid } from "nanoid";
+import { createId } from "@/lib/id";
 import type { CollectionRecord } from "@/lib/types/collection";
 import {
   createCollection,
@@ -56,11 +56,15 @@ export function UpsertCollectionDialog({
     };
   }, [collection]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional prop-to-state
+     sync: reset the form every time the dialog opens (or a different
+     collection is passed in for editing). */
   useEffect(() => {
     if (!open) return;
     setValues(initialValues);
     setErrors({});
   }, [open, initialValues]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -78,7 +82,7 @@ export function UpsertCollectionDialog({
         toast.success("Collection updated");
       } else {
         await createCollection({
-          id: `collection_${nanoid(8)}`,
+          id: `collection_${createId().slice(0, 8)}`,
           ...result.normalized,
         });
         toast.success("Collection created");

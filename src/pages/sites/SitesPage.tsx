@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { listSites } from "@/lib/services/site-service";
+import { useApiList } from "@/lib/api/useApi";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -39,7 +39,7 @@ function formatRelativeDate(value?: string | null) {
 }
 
 export default function SitesPage() {
-  const sites = useLiveQuery(() => db.sites.orderBy("updatedAt").reverse().toArray(), []) ?? [];
+  const { data: sites } = useApiList(listSites);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   useSearchShortcut(searchInputRef);

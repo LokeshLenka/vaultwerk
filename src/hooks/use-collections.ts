@@ -1,13 +1,13 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { getCollectionById, listCollections } from "@/lib/services/collection-service";
+import { useApiDoc, useApiList } from "@/lib/api/useApi";
+import type { CollectionRecord } from "@/lib/types/collection";
 
-export function useCollections() {
-  return useLiveQuery(
-    () => db.collections.orderBy("createdAt").reverse().toArray(),
-    [],
-  );
+export function useCollections(): CollectionRecord[] {
+  const { data } = useApiList(listCollections);
+  return data;
 }
 
 export function useCollection(id: string) {
-  return useLiveQuery(() => db.collections.get(id), [id]);
+  const { data } = useApiDoc(() => getCollectionById(id), [id]);
+  return data;
 }

@@ -64,6 +64,9 @@ export default function ToolSheet({
     if (open === undefined) setInternalOpen(value);
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional prop-to-state
+     sync: reset transient dialog state when closed, and populate the form
+     when a different tool is passed in for editing. */
   useEffect(() => {
     if (!controlledOpen) {
       setDeleteDialogOpen(false);
@@ -85,6 +88,7 @@ export default function ToolSheet({
       isFavorite: !!tool.isFavorite,
     });
   }, [tool]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const parsedTags = useMemo(
     () =>
@@ -115,7 +119,7 @@ export default function ToolSheet({
     const payload = {
       name: form.name.trim(),
       url: trimmedUrl,
-      category: (form.category.trim() || null) as any,
+      category: form.category.trim() || null,
       description: form.description.trim() || null,
       tags: parsedTags,
       isFavorite: form.isFavorite,

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { listTools } from "@/lib/services/tool-service";
+import { getCollectionById } from "@/lib/services/collection-service";
+import { useApiDoc, useApiList } from "@/lib/api/useApi";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,9 @@ import {
 import type { ToolRecord } from "@/lib/types/tool";
 import {
   addToolToCollection,
+  deleteCollection,
   removeToolFromCollection,
+  updateCollection,
 } from "@/lib/services/collection-service";
 import {
   ArrowLeft,
@@ -107,11 +110,12 @@ export function CollectionDetailsPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const workspace = useWorkspace();
 
-  const collection = useLiveQuery(() => db.collections.get(id), [id]);
-  const allTools =
-    useLiveQuery(() => db.tools.orderBy("createdAt").reverse().toArray(), []) ??
-    [];
+  const { data: collection } = useApiDoc(() => getCollectionById(id), [id]);
+  const { data: allTools } = useApiList(listTools);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional store-to-state
+     sync: hydrate the edit drafts from the loaded collection until the user
+     starts editing a field. */
   useEffect(() => {
     if (!collection) return;
     if (editingField === null) {
@@ -119,6 +123,7 @@ export function CollectionDetailsPage() {
       setDescriptionDraft(collection.description ?? "");
     }
   }, [collection, editingField]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (editingField === "name") {
@@ -175,10 +180,7 @@ export function CollectionDetailsPage() {
       const nextName = trimmed || collection.name;
 
       if (nextName !== collection.name) {
-        await db.collections.update(collection.id, {
-          name: nextName,
-          updatedAt: new Date().toISOString(),
-        });
+        await updateCollection(collection.id, { name: nextName });
       } else {
         setNameDraft(collection.name);
       }
@@ -189,9 +191,8 @@ export function CollectionDetailsPage() {
       const nextDescription = trimmed || null;
 
       if (nextDescription !== (collection.description ?? null)) {
-        await db.collections.update(collection.id, {
+        await updateCollection(collection.id, {
           description: nextDescription,
-          updatedAt: new Date().toISOString(),
         });
       } else {
         setDescriptionDraft(collection.description ?? "");
@@ -229,7 +230,7 @@ export function CollectionDetailsPage() {
 
     try {
       setIsDeleting(true);
-      await db.collections.delete(collection.id);
+      await deleteCollection(collection.id);
       toast.success("Collection deleted");
       navigate("/dashboard/collections");
     } finally {

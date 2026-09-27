@@ -1,12 +1,14 @@
-import { Routes, useLocation } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Navigate, Routes, useLocation } from "react-router-dom";
 import HomePage from "./pages/landing/HomePage";
 import { Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import Timeline from "./pages/landing/timeline/Timeline";
 import DashboardLayout from "./layouts/DashboardLayout";
-import LibraryPage from "./pages/tool/Library";
-import { CollectionsPage } from "./pages/collection/CollectionsPage";
-import { CollectionDetailsPage } from "./pages/collection/CollectionDetailsPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import { RequireAuth } from "./components/auth/RequireAuth";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { GlobalLoader } from "./components/GlobalLoader";
 import { Toaster } from "sonner";
@@ -16,11 +18,41 @@ import {
   Info,
   WarningCircle,
   Spinner,
+  SpinnerGap,
 } from "@phosphor-icons/react";
 import { Analytics } from "@vercel/analytics/react";
-import SitesPage from "./pages/sites/SitesPage";
-import SiteDetailsPage from "./pages/sites/SiteDetailsPage";
 // import { DocsPage } from "./pages/docs/DocsPage";
+
+// Dashboard routes are code-split: the library/collections/sites views pull
+// in Dexie live queries, tables and dialogs that the landing page never needs.
+const LibraryPage = lazy(() => import("./pages/tool/Library"));
+const CollectionsPage = lazy(() =>
+  import("./pages/collection/CollectionsPage").then((m) => ({
+    default: m.CollectionsPage,
+  })),
+);
+const CollectionDetailsPage = lazy(() =>
+  import("./pages/collection/CollectionDetailsPage").then((m) => ({
+    default: m.CollectionDetailsPage,
+  })),
+);
+const SitesPage = lazy(() => import("./pages/sites/SitesPage"));
+const SiteDetailsPage = lazy(() => import("./pages/sites/SiteDetailsPage"));
+const WorkspaceSettingsPage = lazy(
+  () => import("./pages/settings/WorkspaceSettingsPage"),
+);
+
+function DashboardFallback() {
+  return (
+    <div
+      className="flex min-h-[40dvh] items-center justify-center"
+      role="status"
+      aria-label="Loading page"
+    >
+      <SpinnerGap size={24} className="animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 function App() {
   const location = useLocation();
@@ -68,14 +100,28 @@ function App() {
             {/* <Route path="/docs" element={<DocsPage />} /> */}
             <Route path="/timeline" element={<Timeline />} />
           </Route>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            {/* <Route index element={<Timeline />} /> */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <Suspense fallback={<DashboardFallback />}>
+                  <DashboardLayout />
+                </Suspense>
+              </RequireAuth>
+            }
+          >
+            <Route index element={<Navigate to="library" replace />} />
             <Route path="library" element={<LibraryPage />} />
             <Route path="collections" element={<CollectionsPage />} />
             <Route path="collections/:id" element={<CollectionDetailsPage />} />
             <Route path="sites" element={<SitesPage />} />
             <Route path="sites/:id" element={<SiteDetailsPage />} />
+            <Route path="settings" element={<WorkspaceSettingsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </TooltipProvider>
       <Analytics />

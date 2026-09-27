@@ -7,7 +7,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { db } from "@/lib/db";
+import { getCollectionTools } from "@/lib/services/collection-service";
+import { useDataVersion } from "@/lib/data/events";
 import type { ToolRecord } from "@/lib/types/tool";
 import type { CollectionRecord } from "@/lib/types/collection";
 import { formatRelativeDate } from "@/lib/helpers/format-relative-date";
@@ -28,6 +29,7 @@ export default function CollectionCardFooter({
 }: Props) {
   const toolCacheRef = useRef<ToolRecord[]>([]);
   const workspace = useWorkspace();
+  const dataVersion = useDataVersion();
 
   useEffect(() => {
     if (toolIds.length === 0) {
@@ -35,13 +37,13 @@ export default function CollectionCardFooter({
       return;
     }
     let cancelled = false;
-    db.tools.bulkGet(toolIds).then((tools) => {
+    getCollectionTools(collectionId).then((tools) => {
       if (!cancelled) {
-        toolCacheRef.current = tools.filter((t): t is ToolRecord => t != null);
+        toolCacheRef.current = tools;
       }
     });
     return () => { cancelled = true; };
-  }, [toolIds]);
+  }, [collectionId, toolIds, dataVersion]);
 
   const handleOpenAll = useCallback(() => {
     const tools = toolCacheRef.current

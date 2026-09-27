@@ -1,34 +1,50 @@
-import { db } from "../db";
-import { createSettingRecord } from "../factories/SettingFactory";
+import { apiFetch } from "../api/client";
+import { notifyDataChanged } from "../data/events";
+import type { SettingRecord } from "../types/setting";
 
 export async function setSetting<T>(key: string, value: T) {
-  const record = createSettingRecord(key, value);
-  await db.settings.put(record);
-  return record;
+  const { setting } = await apiFetch<{ setting: SettingRecord<T> }>(
+    `/api/settings/${encodeURIComponent(key)}`,
+    { method: "PUT", body: { value } },
+  );
+  notifyDataChanged();
+  return setting;
 }
 
-export async function getSetting<T>(key: string) {
-  const record = await db.settings.get(key);
-  return (record?.value as T | undefined) ?? null;
+export async function getSetting<T>(key: string): Promise<T | null> {
+  try {
+    const { setting } = await apiFetch<{ setting: SettingRecord<T> | null }>(
+      `/api/settings/${encodeURIComponent(key)}`,
+    );
+    return (setting?.value as T | undefined) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getSettingRecord<T>(key: string) {
-  return db.settings.get(key) as Promise<
-    | {
-        key: string;
-        value: T;
-        updatedAt: string;
-      }
-    | undefined
-  >;
+  try {
+    const { setting } = await apiFetch<{ setting: SettingRecord<T> | null }>(
+      `/api/settings/${encodeURIComponent(key)}`,
+    );
+    return setting;
+  } catch {
+    return undefined;
+  }
 }
 
-export async function removeSetting(key: string) {
-  await db.settings.delete(key);
+export async function removeSetting(key: string): Promise<void> {
+  await apiFetch(`/api/settings/${encodeURIComponent(key)}`, {
+    method: "DELETE",
+  });
+  notifyDataChanged();
 }
 
-export async function listSettings() {
-  return db.settings.toArray();
+export async function listSettings(): Promise<SettingRecord[]> {
+  const { settings } = await apiFetch<{ settings: SettingRecord[] }>(
+    "/api/settings",
+  );
+  return settings;
 }
 
 /* Optional app-specific helpers */

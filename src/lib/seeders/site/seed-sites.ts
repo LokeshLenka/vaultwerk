@@ -1,4 +1,4 @@
-import { db } from "../../db";
+import { createTool, deleteTool, listTools } from "../../services/tool-service";
 import { normalizeUrl } from "../../helpers/nomalize-url";
 import { syncAllSites } from "../../services/site-sync-service";
 
@@ -92,16 +92,11 @@ const SEED_DOMAINS: SeedDomain[] = [
   },
 ];
 
-function randomDateWithinDays(days: number) {
-  const now = Date.now();
-  const offset = Math.floor(Math.random() * days) * 24 * 60 * 60 * 1000;
-  return new Date(now - offset).toISOString();
-}
-
 export async function seedSites(options?: { clearExisting?: boolean }) {
   if (options?.clearExisting) {
-    await db.tools.clear();
-    await db.sites.clear();
+    // Deleting tools prunes their sites automatically (server-side).
+    const existing = await listTools();
+    await Promise.all(existing.map((tool) => deleteTool(tool.id)));
   }
 
   const inserted: string[] = [];
@@ -111,26 +106,15 @@ export async function seedSites(options?: { clearExisting?: boolean }) {
       const url = domain.baseUrl + page.path;
       const normalized = normalizeUrl(url);
 
-      const record = {
-        id: crypto.randomUUID(),
+      // The API normalizes, dedupes, and attaches site grouping.
+      const result = await createTool({
         name: page.name,
         url: normalized.url,
-        normalizedUrl: normalized.normalizedUrl,
-        domain: normalized.domain,
-        faviconUrl: null,
-        category: "other" as const,
-        tags: [] as string[],
+        category: "other",
         description: `${page.name} page on ${domain.name}`,
-        notes: null,
-        siteId: null,
-        isFavorite: false,
-        createdAt: randomDateWithinDays(180),
-        updatedAt: randomDateWithinDays(30),
-        lastUsedAt: Math.random() > 0.3 ? randomDateWithinDays(45) : null,
-      };
-
-      await db.tools.add(record);
-      inserted.push(record.id);
+        tags: [],
+      });
+      inserted.push(result.tool.id);
     }
   }
 

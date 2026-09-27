@@ -199,7 +199,11 @@ export function useWorkspace() {
     for (const tool of toolsRef.current) {
       try {
         window.open(tool.url, "_blank");
-      } catch {}
+      } catch {
+        // window.open throws in locked-down contexts; record it so the
+        // failure is visible in telemetry instead of vanishing silently.
+        track("workspace_popup_blocked", { url: tool.url });
+      }
     }
     track("workspace_cancelled", { reason: "open_individually" });
     goIdle();

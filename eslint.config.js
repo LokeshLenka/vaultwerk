@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // shadcn/ui convention: component files co-export variants, hooks and
+  // helpers (e.g. buttonVariants, useSidebar, useTheme). Fast-refresh
+  // only-export-components does not apply to this established pattern.
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

@@ -7,11 +7,13 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ModeToggle } from "@/components/mode-toggle";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useLocation, Link } from "react-router-dom";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { getCollectionById } from "@/lib/services/collection-service";
+import { getSiteById } from "@/lib/services/site-service";
+import { useApiDoc } from "@/lib/api/useApi";
 
 function formatSegment(segment: string) {
   return segment
@@ -24,14 +26,14 @@ export const AppHeader = () => {
   const segments = pathname.split("/").filter(Boolean);
 
   const collectionId = segments[1] === "collections" && segments[2] ? segments[2] : null;
-  const collection = useLiveQuery(
-    () => (collectionId ? db.collections.get(collectionId) : undefined),
+  const { data: collection } = useApiDoc(
+    () => (collectionId ? getCollectionById(collectionId) : Promise.resolve(undefined)),
     [collectionId],
   );
 
   const siteId = segments[1] === "sites" && segments[2] ? segments[2] : null;
-  const site = useLiveQuery(
-    () => (siteId ? db.sites.get(siteId) : undefined),
+  const { data: site } = useApiDoc(
+    () => (siteId ? getSiteById(siteId) : Promise.resolve(undefined)),
     [siteId],
   );
 
@@ -85,7 +87,10 @@ export const AppHeader = () => {
           </Breadcrumb>
         </div>
 
-        <ModeToggle />
+        <div className="flex items-center gap-1">
+          <ModeToggle />
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

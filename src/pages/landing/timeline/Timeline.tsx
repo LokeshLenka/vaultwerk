@@ -5,7 +5,9 @@ import Phase4Content from "../../../components/roadmap/content/phase-4";
 import type { Phase } from "../../../lib/types/product-timeline/phase";
 import ProductTimeline from "./valutwerk-product-timeline";
 
-export const phases: Phase[] = [
+// Module-private (not exported): react-refresh only-export-components
+// requires component files to export components, so shared data stays local.
+const phases: Phase[] = [
   {
     phase: "Phase 1",
     label: "Web App — MVP",
@@ -36,7 +38,7 @@ export const phases: Phase[] = [
   },
 ];
 
-function  Timeline() {
+function Timeline() {
   return (
     <div className="flex min-h-screen flex-col">
       <div className="mx-auto max-w-4xl px-4 py-10 md:px-8 md:py-16">

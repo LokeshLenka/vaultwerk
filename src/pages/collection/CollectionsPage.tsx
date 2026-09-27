@@ -22,7 +22,7 @@ import { SeedCollectionsButton } from "@/lib/seeders/collection/seed-collections
 import { useSearchShortcut } from "@/hooks/use-search-shortcut";
 
 export function CollectionsPage() {
-  const collections = useCollections() ?? [];
+  const collections = useCollections();
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<CollectionRecord | null>(null);

@@ -1,14 +1,30 @@
-import { db } from "../db";
+import { apiFetch } from "../api/client";
 import type { SiteRecord } from "../types/site";
+import type { ToolRecord } from "../types/tool";
 
 export async function listSites(): Promise<SiteRecord[]> {
-  return db.sites.orderBy("updatedAt").reverse().toArray();
+  const { sites } = await apiFetch<{ sites: SiteRecord[] }>("/api/sites");
+  return sites;
 }
 
 export async function getSiteById(id: string): Promise<SiteRecord | undefined> {
-  return db.sites.get(id);
+  try {
+    const { site } = await apiFetch<{ site: SiteRecord }>(
+      `/api/sites/${encodeURIComponent(id)}`,
+    );
+    return site;
+  } catch {
+    return undefined;
+  }
 }
 
-export async function getSiteTools(siteId: string) {
-  return db.tools.where("siteId").equals(siteId).toArray();
+export async function getSiteTools(siteId: string): Promise<ToolRecord[]> {
+  try {
+    const { tools } = await apiFetch<{ tools: ToolRecord[] }>(
+      `/api/sites/${encodeURIComponent(siteId)}/tools`,
+    );
+    return tools;
+  } catch {
+    return [];
+  }
 }

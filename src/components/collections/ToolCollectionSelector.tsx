@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { listTools } from "@/lib/services/tool-service";
+import { useApiList } from "@/lib/api/useApi";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ToolRecord } from "@/lib/types/tool";
@@ -16,9 +16,7 @@ export function ToolCollectionSelector({
   selectedToolIds,
 }: ToolCollectionSelectorProps) {
   const [query, setQuery] = useState("");
-  const tools =
-    useLiveQuery(() => db.tools.orderBy("createdAt").reverse().toArray(), []) ??
-    [];
+  const { data: tools } = useApiList(listTools);
 
   const items = useMemo(() => {
     const selected = new Set(selectedToolIds);

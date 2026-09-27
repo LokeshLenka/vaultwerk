@@ -1,5 +1,8 @@
-import { db } from "../../db";
-import { createToolRecord } from "../../factories/ToolFactory";
+import {
+  createTool,
+  deleteTool,
+  listTools,
+} from "../../services/tool-service";
 import type { ToolCategory, ToolType, ToolSource } from "../../enums";
 import { findToolByNormalizedUrl } from "../../queries/tools/queries";
 import { normalizeUrl } from "@/lib/helpers/nomalize-url";
@@ -36,7 +39,8 @@ export async function seedTools(options?: {
   const skipDuplicates = options?.skipDuplicates ?? true;
 
   if (clearExisting) {
-    await db.tools.clear();
+    const existing = await listTools();
+    await Promise.all(existing.map((tool) => deleteTool(tool.id)));
   }
 
   const selectedTemplates = shuffle(TOOL_SEED_TEMPLATES).slice(
@@ -58,20 +62,17 @@ export async function seedTools(options?: {
       }
     }
 
-    const record = createToolRecord({
-      id: crypto.randomUUID(),
+    // The API normalizes, dedupes, and attaches site grouping.
+    const result = await createTool({
       name: template.name,
-      url: normalized.url,
-      normalizedUrl: normalized.normalizedUrl,
-      domain: normalized.domain,
+      url: template.url,
       category: template.category,
-      toolType: template.toolType,
-      source: template.source ?? "manual",
-      seed: true,
     });
-
-    await db.tools.add(record);
-    inserted.push(record);
+    if (!result.created) {
+      skipped.push(result.tool.normalizedUrl);
+      continue;
+    }
+    inserted.push(result.tool);
   }
 
   await syncAllSites();
@@ -85,6 +86,6 @@ export async function seedTools(options?: {
 }
 
 export async function clearSeedTools() {
-  await db.tools.clear();
-  await db.sites.clear();
+  const existing = await listTools();
+  await Promise.all(existing.map((tool) => deleteTool(tool.id)));
 }
