@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthCard, AuthFooterLink } from "@/components/auth/AuthCard";
 import { useAuth } from "@/lib/auth/useAuth";
+import SplitText from "@/components/SplitText";
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -13,7 +14,15 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Welcome back"
+      title={
+        <SplitText
+          tag="span"
+          text="Welcome back"
+          splitType="words"
+          delay={70}
+          duration={0.7}
+        />
+      }
       subtitle="Sign in to your VaultWerk library."
       fields={[
         { id: "email", label: "Email", type: "email", autoComplete: "email", placeholder: "you@example.com" },

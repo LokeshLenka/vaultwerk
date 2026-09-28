@@ -1,5 +1,6 @@
 import { Kbd } from "@/components/ui/kbd";
 import { Button } from "../../ui/button";
+import BlurText from "../../BlurText";
 
 function ToolEmptyState({
   query,
@@ -28,7 +29,12 @@ function ToolEmptyState({
 
   return (
     <div className="rounded-2xl border border-dashed p-10 text-center">
-      <h3 className="text-base font-medium">No tools saved yet</h3>
+      <BlurText
+        text="No tools saved yet"
+        delay={120}
+        animateBy="words"
+        className="justify-center text-base font-medium"
+      />
 
       <p className="mt-2 text-sm text-muted-foreground">
         Save websites, libraries, frameworks, and tools you want to find again.

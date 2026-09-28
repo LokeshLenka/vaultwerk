@@ -1,5 +1,6 @@
 import { Kbd } from "@/components/ui/kbd";
 import { Button } from "../ui/button";
+import BlurText from "../BlurText";
 
 function CollectionEmptyState({
   query,
@@ -28,19 +29,24 @@ function CollectionEmptyState({
 
   return (
     <div className="rounded-2xl border border-dashed p-10 text-center">
-      <h3 className="text-base font-medium">No tools saved yet</h3>
+      <BlurText
+        text="No collections yet"
+        delay={120}
+        animateBy="words"
+        className="justify-center text-base font-medium"
+      />
 
       <p className="mt-2 text-sm text-muted-foreground">
-        Save websites, libraries, frameworks, and tools you want to find again.
+        Group tools into stacks you can open, share, and rediscover together.
       </p>
 
       <div className="mt-4 flex items-center justify-center gap-1 text-sm text-muted-foreground">
-        <span>Add a tool:</span>
+        <span>New collection:</span>
         <Kbd>Ctrl</Kbd>
         <span>+</span>
         <Kbd>Shift</Kbd>
         <span>+</span>
-        <Kbd>A</Kbd>
+        <Kbd>C</Kbd>
       </div>
     </div>
   );

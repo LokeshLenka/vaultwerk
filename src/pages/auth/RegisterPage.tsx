@@ -2,6 +2,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { AuthCard, AuthFooterLink } from "@/components/auth/AuthCard";
 import { useAuth } from "@/lib/auth/useAuth";
 import { ApiError } from "@/lib/api/client";
+import SplitText from "@/components/SplitText";
 
 export default function RegisterPage() {
   const { user, loading, register } = useAuth();
@@ -11,7 +12,15 @@ export default function RegisterPage() {
 
   return (
     <AuthCard
-      title="Create your account"
+      title={
+        <SplitText
+          tag="span"
+          text="Create your account"
+          splitType="words"
+          delay={70}
+          duration={0.7}
+        />
+      }
       subtitle="Your library is private to you by default."
       fields={[
         { id: "name", label: "Name", type: "text", autoComplete: "name", placeholder: "Ada Lovelace" },

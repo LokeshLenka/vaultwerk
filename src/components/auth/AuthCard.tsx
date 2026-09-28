@@ -23,7 +23,7 @@ export function AuthCard({
   footer,
   onSubmit,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle: string;
   fields: AuthField[];
   submitLabel: string;

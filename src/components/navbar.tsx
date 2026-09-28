@@ -13,6 +13,7 @@ import {
 import { cn } from "../lib/utils";
 import { useAuth } from "@/lib/auth/useAuth";
 import { GitHubStarsButton } from "./github-stars-button";
+import Magnet from "./Magnet";
 // import LogoLightTheme from "../assets/vaultwerk-new.png";
 import LogoDarkTheme from "../assets/vaultwerk-new.png";
 
@@ -88,7 +89,9 @@ export function Navbar() {
             <GitHubStarsButton username="LokeshLenka" repo="vaultwerk" />
           </div>
           <Link to={"/dashboard/library"}>
-            <Button>Get started</Button>
+            <Magnet padding={40} magnetStrength={1.2}>
+              <Button>Get started</Button>
+            </Magnet>
           </Link>
           {!loading &&
             (user ? (
