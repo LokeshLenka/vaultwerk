@@ -19,6 +19,8 @@ export type CreateToolInput = {
   notes?: string | null;
   tags?: string[];
   isFavorite?: boolean;
+  /** Page icon captured by the metadata probe (create-only). */
+  faviconUrl?: string | null;
 };
 
 export type UpdateToolInput = Partial<

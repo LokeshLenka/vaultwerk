@@ -17,6 +17,9 @@ import {
 } from "../../../lib/services/tool-service";
 import ToolSheetForm, { type ToolFormState } from "./ToolSheetForm";
 import { useUrlDuplicateCheck } from "@/hooks/use-url-duplicate-check";
+import { useUrlMetadata } from "@/hooks/use-url-metadata";
+import Magnet from "../../Magnet";
+import ClickSpark from "../../ClickSpark";
 import { Separator } from "../../ui/separator";
 import { toast } from "sonner";
 import ToolDeleteDialog from "./ToolDeleteDialog";
@@ -53,10 +56,18 @@ export default function ToolSheet({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  // Page icon captured from the metadata probe; persisted on create.
+  const [autoFavicon, setAutoFavicon] = useState<string | null>(null);
 
   const { isDuplicate, duplicateName, isChecking } = useUrlDuplicateCheck(
     form.url.trim(),
     tool?.id,
+  );
+
+  // Create-mode only, and never for a URL that's already saved.
+  const { metadata, isFetching: isFetchingMetadata } = useUrlMetadata(
+    form.url.trim(),
+    !isEdit && !isDuplicate,
   );
 
   const setOpen = (value: boolean) => {
@@ -76,6 +87,7 @@ export default function ToolSheet({
   useEffect(() => {
     if (!tool) {
       setForm(emptyForm);
+      setAutoFavicon(null);
       return;
     }
 
@@ -87,7 +99,44 @@ export default function ToolSheet({
       description: tool.description ?? tool.notes ?? "",
       isFavorite: !!tool.isFavorite,
     });
+    setAutoFavicon(null);
   }, [tool]);
+
+  // Page preview: pre-fill empty fields from the fetched page. Only fields
+  // the user hasn't touched are filled, and only while the previewed URL
+  // still matches the input — typing a new URL starts a fresh probe.
+  const trimmedUrl = form.url.trim();
+  const metadataApplied =
+    !isEdit &&
+    !!metadata &&
+    metadata.url === trimmedUrl &&
+    (!!metadata.title ||
+      !!metadata.description ||
+      !!metadata.suggestedCategory ||
+      metadata.suggestedTags.length > 0);
+  const urlMetadataStatus: "idle" | "fetching" | "applied" = isFetchingMetadata
+    ? "fetching"
+    : metadataApplied
+      ? "applied"
+      : "idle";
+  useEffect(() => {
+    if (isEdit || !metadata || metadata.url !== trimmedUrl) return;
+    if (metadata.faviconUrl) setAutoFavicon(metadata.faviconUrl);
+    setForm((prev) => {
+      const fills: Partial<ToolFormState> = {};
+      if (!prev.name.trim() && metadata.title) fills.name = metadata.title;
+      if (!prev.description.trim() && metadata.description) {
+        fills.description = metadata.description;
+      }
+      if (!prev.category.trim() && metadata.suggestedCategory) {
+        fills.category = metadata.suggestedCategory;
+      }
+      if (!prev.tags.trim() && metadata.suggestedTags.length > 0) {
+        fills.tags = metadata.suggestedTags.join(", ");
+      }
+      return Object.keys(fills).length > 0 ? { ...prev, ...fills } : prev;
+    });
+  }, [isEdit, metadata, trimmedUrl]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const parsedTags = useMemo(
@@ -103,6 +152,8 @@ export default function ToolSheet({
     key: K,
     value: ToolFormState[K],
   ) {
+    // A hand-edited URL invalidates the captured page icon.
+    if (key === "url") setAutoFavicon(null);
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -123,6 +174,9 @@ export default function ToolSheet({
       description: form.description.trim() || null,
       tags: parsedTags,
       isFavorite: form.isFavorite,
+      // Page icon captured by the preview probe; create-only so edits
+      // never clobber the stored favicon.
+      ...(!isEdit ? { faviconUrl: autoFavicon } : null),
     };
 
     try {
@@ -163,10 +217,18 @@ export default function ToolSheet({
         <DialogTrigger>
           <Button
             size="icon"
-            className="fixed bottom-8 right-8 z-10 size-12 shadow-xl sm:h-12 sm:w-auto sm:px-4"
+            className="fixed bottom-8 right-8 z-10 size-12 overflow-hidden shadow-xl sm:h-12 sm:w-auto sm:px-4"
           >
-            <Plus className="size-6" />
-            <span className="ml-2 hidden sm:inline">Add tool</span>
+            {/* Bits live inside the button: a transformed ancestor would
+                break `fixed` positioning, so Magnet/ClickSpark wrap content. */}
+            <ClickSpark sparkCount={10} sparkColor="#a3a3a3">
+              <Magnet magnetStrength={1.5} padding={30}>
+                <span className="inline-flex items-center">
+                  <Plus className="size-6" />
+                  <span className="ml-2 hidden sm:inline">Add tool</span>
+                </span>
+              </Magnet>
+            </ClickSpark>
           </Button>
         </DialogTrigger>
       ) : null}
@@ -194,6 +256,7 @@ export default function ToolSheet({
             urlIsDuplicate={isDuplicate}
             urlDuplicateName={duplicateName}
             urlIsChecking={isChecking}
+            urlMetadataStatus={urlMetadataStatus}
           />
 
           {isEdit ? <Separator /> : null}

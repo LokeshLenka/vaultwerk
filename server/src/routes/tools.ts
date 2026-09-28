@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { HttpError, asyncHandler } from "../errors.js";
 import {
   authenticate,
@@ -7,19 +8,24 @@ import {
   requireUser,
   validate,
 } from "../middleware/auth.js";
-import { Tool, type ToolDoc } from "../models/library.js";
+import { Tool, type ToolDoc, Collection } from "../models/library.js";
 import {
   attachToolToSite,
   detachToolFromSite,
+  syncAllSites,
 } from "../services/siteSync.js";
 import { normalizeUrl } from "../utils/normalizeUrl.js";
+import { suggestCategory, suggestTags } from "../services/suggest.js";
 import {
+  bookmarkImportSchema,
   forgottenQuerySchema,
+  metadataQuerySchema,
   relatedQuerySchema,
   toolCreateSchema,
   toolUpdateSchema,
   toolsQuerySchema,
 } from "../validation.js";
+import { fetchPageMetadata } from "../services/metadata.js";
 
 const router = Router();
 router.use(authenticate, requireUser);
@@ -58,6 +64,7 @@ router.post(
       notes?: string | null;
       tags?: string[];
       isFavorite?: boolean;
+      faviconUrl?: string | null;
     };
 
     let normalized: ReturnType<typeof normalizeUrl>;
@@ -86,6 +93,12 @@ router.post(
       notes: input.notes ?? null,
       tags: input.tags ?? [],
       isFavorite: input.isFavorite ?? false,
+      // Auto-fetched page icon; only persisted when it's a sane http(s) URL.
+      faviconUrl:
+        typeof input.faviconUrl === "string" &&
+        /^https?:\/\//i.test(input.faviconUrl)
+          ? input.faviconUrl
+          : null,
       siteId: null,
     });
     await attachToolToSite(String(tool._id), ownerId);
@@ -105,6 +118,196 @@ router.get(
     if (!normalizedUrl) return res.json({ tool: null });
     const tool = await Tool.findOne({ ownerId: req.user!.id, normalizedUrl });
     return res.json({ tool });
+  }),
+);
+
+// Fetching arbitrary pages is expensive and SSRF-sensitive, so this probe
+// gets its own tight budget on top of the general API limiter.
+const metadataLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: "draft-7",
+  message: { error: "Too many page previews — try again in a minute" },
+});
+
+/**
+ * Page preview probe: paste a URL, get back its title, description, and
+ * favicon so the editor can pre-fill the form. Failures are 422 with a
+ * human-readable message — the client just leaves the form manual.
+ * Registered before "/:id" so "metadata" isn't treated as a tool id.
+ */
+router.get(
+  "/metadata",
+  metadataLimiter,
+  validate({ query: metadataQuerySchema }),
+  asyncHandler(async (req, res) => {
+    const { url } = req.query as { url: string };
+    try {
+      const metadata = await fetchPageMetadata(url);
+      res.json({ metadata });
+    } catch (error) {
+      throw new HttpError(
+        422,
+        error instanceof Error ? error.message : "That page could not be read",
+      );
+    }
+  }),
+);
+
+/**
+ * Browser bookmark import. The client parses the Netscape-format HTML
+ * export locally (DOM-free regex pass) and POSTs plain items; the server
+ * owns normalization, dedupe, auto-categorization, and collection wiring
+ * so a re-import is always safe.
+ *
+ * Browser-generated root folders ("Bookmarks bar", "Other bookmarks", …)
+ * never become collections, even if a client sends them raw.
+ */
+const ROOT_FOLDERS = new Set([
+  "bookmarks bar",
+  "other bookmarks",
+  "mobile bookmarks",
+  "bookmarks",
+  "bookmarks menu",
+  "favorites bar",
+  "other favorites",
+  "toolbar",
+  "reading list",
+]);
+router.post(
+  "/import-bookmarks",
+  validate({ body: bookmarkImportSchema }),
+  asyncHandler(async (req, res) => {
+    const ownerId = req.user!.id;
+    const { items, createCollections } = req.body as {
+      items: { url: string; title?: string | null; folder?: string | null }[];
+      createCollections?: boolean;
+    };
+
+    type Prepared = {
+      url: string;
+      normalizedUrl: string;
+      domain: string;
+      name: string;
+      category: string | null;
+      tags: string[];
+      folder: string | null;
+    };
+    const prepared: Prepared[] = [];
+    let invalid = 0;
+
+    for (const item of items) {
+      const raw = item.url.trim();
+      // Bookmarks carry chrome://, javascript:, place:, data:… — web only.
+      if (!/^https?:\/\//i.test(raw)) {
+        invalid++;
+        continue;
+      }
+      let normalized: ReturnType<typeof normalizeUrl>;
+      try {
+        normalized = normalizeUrl(raw);
+      } catch {
+        invalid++;
+        continue;
+      }
+      const rawTitle = item.title?.trim().replace(/\s+/g, " ").slice(0, 200) ?? "";
+      // Suggest from the real title only — the domain fallback below would
+      // otherwise leak tokens like "com" into the tags.
+      const suggestionInput = { title: rawTitle || null, url: normalized.url };
+      // Browser root folders ("Bookmarks bar", …) never become collections.
+      const folderRaw = item.folder?.trim().slice(0, 50) ?? "";
+      const folder = ROOT_FOLDERS.has(folderRaw.toLowerCase()) ? null : folderRaw || null;
+      prepared.push({
+        url: normalized.url,
+        normalizedUrl: normalized.normalizedUrl,
+        domain: normalized.domain,
+        name: rawTitle || normalized.domain,
+        category: suggestCategory(suggestionInput),
+        tags: suggestTags(suggestionInput),
+        folder,
+      });
+    }
+
+    // One query finds every already-saved URL…
+    const existing = await Tool.find({
+      ownerId,
+      normalizedUrl: { $in: prepared.map((p) => p.normalizedUrl) },
+    }).select("normalizedUrl");
+    const existingSet = new Set(existing.map((t) => t.normalizedUrl));
+    // …and a local set catches repeats inside the file itself.
+    const seen = new Set<string>();
+    const fresh = prepared.filter((p) => {
+      if (existingSet.has(p.normalizedUrl) || seen.has(p.normalizedUrl)) {
+        return false;
+      }
+      seen.add(p.normalizedUrl);
+      return true;
+    });
+    const duplicates = prepared.length - fresh.length;
+
+    const created =
+      fresh.length > 0
+        ? await Tool.insertMany(
+            fresh.map((p) => ({
+              ownerId,
+              url: p.url,
+              normalizedUrl: p.normalizedUrl,
+              domain: p.domain,
+              name: p.name,
+              category: p.category,
+              description: null,
+              notes: null,
+              tags: p.tags,
+              isFavorite: false,
+              faviconUrl: null,
+              siteId: null,
+            })),
+          )
+        : [];
+
+    let collectionsCreated = 0;
+    let collectionsReused = 0;
+    if (createCollections !== false && created.length > 0) {
+      const byFolder = new Map<string, string[]>();
+      created.forEach((doc, i) => {
+        const folder = fresh[i].folder;
+        if (!folder) return;
+        const ids = byFolder.get(folder) ?? [];
+        ids.push(String(doc._id));
+        byFolder.set(folder, ids);
+      });
+      for (const [name, toolIds] of byFolder) {
+        let collection = await Collection.findOne({ ownerId, name });
+        if (!collection) {
+          collection = await Collection.create({
+            ownerId,
+            name,
+            description: "Imported from browser bookmarks",
+            toolIds: [],
+          });
+          collectionsCreated++;
+        } else {
+          collectionsReused++;
+        }
+        await Collection.updateOne(
+          { _id: collection._id },
+          { $addToSet: { toolIds: { $each: toolIds } } },
+        );
+      }
+    }
+
+    // Rebuild site grouping once instead of per-tool.
+    await syncAllSites(ownerId);
+
+    res.status(201).json({
+      summary: {
+        imported: created.length,
+        duplicates,
+        invalid,
+        collectionsCreated,
+        collectionsReused,
+      },
+    });
   }),
 );
 
@@ -195,7 +398,6 @@ router.delete(
     const toolId = String(tool._id);
     await detachToolFromSite(toolId, req.user!.id);
     // Remove from every collection that references it (no dangling ids).
-    const { Collection } = await import("../models/library.js");
     await Collection.updateMany(
       { ownerId: req.user!.id },
       { $pull: { toolIds: toolId } },

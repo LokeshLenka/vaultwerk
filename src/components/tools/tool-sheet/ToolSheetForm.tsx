@@ -26,6 +26,8 @@ type Props = {
   urlIsDuplicate?: boolean;
   urlDuplicateName?: string | null;
   urlIsChecking?: boolean;
+  /** Page-preview probe state for the URL field. */
+  urlMetadataStatus?: "idle" | "fetching" | "applied";
 };
 
 function safeHostname(input?: string) {
@@ -44,6 +46,7 @@ export default function ToolSheetForm({
   urlIsDuplicate,
   urlDuplicateName,
   urlIsChecking,
+  urlMetadataStatus = "idle",
 }: Props) {
   return (
     <div className="space-y-5">
@@ -91,7 +94,8 @@ export default function ToolSheetForm({
           )}
         />
 
-        {/* Feedback line: checking spinner → duplicate error → domain hint */}
+        {/* Feedback line: checking spinner → duplicate error →
+            metadata probe → domain hint */}
         <p
           id="url-feedback"
           className={cn(
@@ -110,6 +114,13 @@ export default function ToolSheetForm({
               Already saved as{" "}
               <strong className="font-medium">{urlDuplicateName}</strong>
             </>
+          ) : urlMetadataStatus === "fetching" ? (
+            <>
+              <SpinnerIcon className="size-3 animate-spin" />
+              Fetching page info…
+            </>
+          ) : urlMetadataStatus === "applied" ? (
+            <>Details auto-filled — edit freely</>
           ) : form.url ? (
             `Domain: ${safeHostname(form.url) || "Will be resolved on save"}`
           ) : null}

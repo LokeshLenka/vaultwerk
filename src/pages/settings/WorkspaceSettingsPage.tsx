@@ -10,6 +10,10 @@ import {
   importBackup,
 } from "@/lib/services/backup-service";
 import {
+  BookmarkImportError,
+  importBookmarks,
+} from "@/lib/services/bookmark-import-service";
+import {
   createApiKey,
   listApiKeys,
   revokeApiKey,
@@ -36,11 +40,13 @@ export default function WorkspaceSettingsPage() {
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportingBookmarks, setIsImportingBookmarks] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKeyRecord[] | null>(null);
   const [newKeyName, setNewKeyName] = useState("");
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [freshSecret, setFreshSecret] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const bookmarkInputRef = useRef<HTMLInputElement | null>(null);
   const browser = detectBrowser();
   const browserLabel = getBrowserLabel(browser);
 
@@ -204,6 +210,46 @@ export default function WorkspaceSettingsPage() {
     [],
   );
 
+  const handleImportBookmarksFile = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setIsImportingBookmarks(true);
+      try {
+        const { summary, parsed } = await importBookmarks(file);
+        const parts = [`${summary.imported} tools added`];
+        if (summary.duplicates > 0) {
+          parts.push(`${summary.duplicates} duplicates skipped`);
+        }
+        if (summary.collectionsCreated > 0) {
+          parts.push(
+            `${summary.collectionsCreated} collection${summary.collectionsCreated !== 1 ? "s" : ""} created`,
+          );
+        }
+        if (summary.invalid > 0) {
+          parts.push(`${summary.invalid} links skipped`);
+        }
+        toast.success(
+          parsed === summary.imported + summary.duplicates
+            ? "Bookmarks imported"
+            : "Bookmarks partially imported",
+          { description: parts.join(" · ") + "." },
+        );
+      } catch (error) {
+        toast.error("Bookmark import failed", {
+          description:
+            error instanceof BookmarkImportError
+              ? error.message
+              : "Could not import from that file.",
+        });
+      } finally {
+        setIsImportingBookmarks(false);
+        // Reset so the same file can be picked again.
+        if (bookmarkInputRef.current) bookmarkInputRef.current.value = "";
+      }
+    },
+    [],
+  );
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div>
@@ -292,14 +338,14 @@ export default function WorkspaceSettingsPage() {
         <div className="space-y-3">
           <h3 className="text-sm font-medium">Data &amp; Backup</h3>
           <p className="-mt-1 text-xs text-muted-foreground">
-            Your library lives in this browser&apos;s local database. Export a
-            backup before clearing site data or switching browsers.
+            Your library lives in your VaultWerk account. Export a backup
+            before deleting your account or migrating elsewhere.
           </p>
 
           <div className="rounded-lg border">
             <button
               onClick={handleExport}
-              disabled={isExporting || isImporting}
+              disabled={isExporting || isImporting || isImportingBookmarks}
               className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-muted/30 disabled:opacity-50"
             >
               <Download size={18} className="text-muted-foreground" />
@@ -315,7 +361,7 @@ export default function WorkspaceSettingsPage() {
             <div className="border-t" />
             <button
               onClick={() => fileInputRef.current?.click()}
-              disabled={isExporting || isImporting}
+              disabled={isExporting || isImporting || isImportingBookmarks}
               className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-muted/30 disabled:opacity-50"
             >
               <UploadSimple size={18} className="text-muted-foreground" />
@@ -335,6 +381,35 @@ export default function WorkspaceSettingsPage() {
               className="hidden"
               aria-label="Choose a VaultWerk backup file"
               onChange={(e) => void handleImportFile(e.target.files?.[0])}
+            />
+            <div className="border-t" />
+            <button
+              onClick={() => bookmarkInputRef.current?.click()}
+              disabled={isExporting || isImporting || isImportingBookmarks}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-muted/30 disabled:opacity-50"
+            >
+              <Globe size={18} className="text-muted-foreground" />
+              <div>
+                <span className="text-foreground">
+                  {isImportingBookmarks
+                    ? "Importing…"
+                    : "Import browser bookmarks"}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  From a Chrome, Firefox, Edge, or Safari HTML export.
+                  Folders become collections.
+                </p>
+              </div>
+            </button>
+            <input
+              ref={bookmarkInputRef}
+              type="file"
+              accept=".html,.htm,text/html"
+              className="hidden"
+              aria-label="Choose a browser bookmark export file"
+              onChange={(e) =>
+                void handleImportBookmarksFile(e.target.files?.[0])
+              }
             />
           </div>
         </div>

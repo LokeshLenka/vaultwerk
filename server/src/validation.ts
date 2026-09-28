@@ -25,6 +25,7 @@ export const toolCreateSchema = z.object({
   notes: nullableText,
   tags,
   isFavorite: z.boolean().optional(),
+  faviconUrl: z.string().trim().max(2048).nullable().optional(),
 });
 
 export const toolUpdateSchema = z
@@ -101,4 +102,21 @@ export const forgottenQuerySchema = z.object({
 
 export const relatedQuerySchema = z.object({
   minSharedTags: z.coerce.number().int().min(1).max(10).optional(),
+});
+
+export const metadataQuerySchema = z.object({
+  url: z.string().trim().min(1).max(2048),
+});
+
+export const bookmarkImportSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        url: z.string().trim().min(1).max(2048),
+        title: z.string().trim().max(200).nullable().optional(),
+        folder: z.string().trim().max(100).nullable().optional(),
+      }),
+    )
+    .max(2000),
+  createCollections: z.boolean().optional().default(true),
 });
