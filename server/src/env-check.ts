@@ -22,6 +22,8 @@ type Expect = {
   mongoContainsAny?: string[];
   /** Mongo URI must never contain any of these fragments. */
   mongoExcludes?: string[];
+  /** Deployed origins must never contain any of these fragments. */
+  urlsExcludes?: string[];
 };
 
 const CLERK_SECRET = "CLERK_SECRET_KEY";
@@ -64,6 +66,7 @@ const EXPECT: Record<Lane, Expect> = {
     clerkPublishablePrefix: "pk_test_",
     mongoContainsAny: [ATLAS],
     mongoExcludes: ["cluster0"],
+    urlsExcludes: ["localhost", "127.0.0.1"],
   },
   production: {
     required: [
@@ -78,6 +81,7 @@ const EXPECT: Record<Lane, Expect> = {
     clerkPublishablePrefix: "pk_live_",
     mongoContainsAny: [ATLAS],
     mongoExcludes: ["127.0.0.1", "localhost", "preview"],
+    urlsExcludes: ["localhost", "127.0.0.1"],
   },
 };
 
@@ -89,6 +93,14 @@ const PLACEHOLDERS = [
   "your-",
   "xxx",
 ];
+
+/**
+ * Scaffold values that must never reach a deploy: a leftover `TODO` ships a
+ * CORS allow-list or a SPA pointed at nothing.
+ */
+const URL_PLACEHOLDERS = ["todo", "example.com", "changeme"];
+/** Keys holding an origin or endpoint the browser will call. */
+const URL_KEYS = ["CLIENT_URLS", "CLIENT_URL", "VITE_API_URL", "VITE_TELEMETRY_ENDPOINT"];
 
 export type LaneReport = { lane: Lane; problems: string[] };
 
@@ -148,6 +160,24 @@ export function checkLane(lane: Lane, env: NodeJS.ProcessEnv): LaneReport {
       problems.push(`${name} on ${lane} is still a placeholder`);
     } else if (lane !== "local" && value.length < 32) {
       problems.push(`${name} on ${lane} must be at least 32 characters`);
+    }
+  }
+
+  // Origins: a leftover scaffold value silently breaks CORS or points the SPA
+  // at nothing, which reads as "the deploy is just flaky".
+  for (const name of URL_KEYS) {
+    const value = env[name];
+    if (!value) continue;
+    const lower = value.toLowerCase();
+    const hit = URL_PLACEHOLDERS.find((p) => lower.includes(p));
+    if (hit) {
+      problems.push(`${name} on ${lane} still contains the scaffold value "${hit}"`);
+    }
+    const local = (expect.urlsExcludes ?? []).find((f) =>
+      lower.includes(f.toLowerCase()),
+    );
+    if (local) {
+      problems.push(`${name} on ${lane} must not contain "${local}"`);
     }
   }
 

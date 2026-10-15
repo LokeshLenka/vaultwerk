@@ -135,4 +135,34 @@ describe("checkLane", () => {
     );
     expect(problems).toEqual([]);
   });
+
+  it("allows a localhost origin on the local lane only", () => {
+    expect(
+      checkLane("local", clone("local", { CLIENT_URL: "http://localhost:5173" }))
+        .problems,
+    ).toEqual([]);
+    for (const lane of ["preview", "production"] as Lane[]) {
+      const { problems } = checkLane(
+        lane,
+        clone(lane, { CLIENT_URLS: "http://localhost:5173" }),
+      );
+      expect(problems.join(" ")).toContain("localhost");
+    }
+  });
+
+  it("rejects a leftover scaffold origin", () => {
+    const { problems } = checkLane(
+      "production",
+      clone("production", { CLIENT_URLS: "https://TODO.vaultwerk.app" }),
+    );
+    expect(problems.join(" ")).toContain("scaffold");
+  });
+
+  it("rejects an unfilled VITE_API_URL", () => {
+    const { problems } = checkLane(
+      "preview",
+      clone("preview", { VITE_API_URL: "https://TODO-api-host" }),
+    );
+    expect(problems.join(" ")).toContain("VITE_API_URL");
+  });
 });

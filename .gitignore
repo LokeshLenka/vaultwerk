@@ -41,3 +41,6 @@ graphify-out/
 # mongodb
 preview-atlas-credentials.env
 production-atlas-credentials.env
+
+# OAuth client downloads (Google sign-in via Clerk)
+client_secret_*.json

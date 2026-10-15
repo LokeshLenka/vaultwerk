@@ -12,21 +12,23 @@ function required(name: string, fallback?: string): string {
 // Deployment lane: local (laptop + local Mongo), preview (Atlas preview
 // DB, prod-like settings), production. Preview runs with NODE_ENV=production
 // on hosts (secure cookies, required secrets) but keeps demo seeding on.
-const isProd = process.env.NODE_ENV === "production";
 
 // Env files are lane-scoped: local → .env.local, preview → .env.preview,
 // production → .env.production. `.env` loads first as shared defaults, then
 // the lane file overrides it — so `npm run dev:api` picks up the local lane
 // without needing an explicit --env-file, and hosts that inject real env
-// vars keep them unless a lane file on disk says otherwise.
+// vars keep them unless a lane file on disk says otherwise. Both files must
+// load before anything reads process.env, NODE_ENV included.
 loadEnvFile({ path: resolve(process.cwd(), ".env") });
 const appEnv = (process.env.APP_ENV ??
-  (isProd ? "production" : "local")) as Lane;
+  (process.env.NODE_ENV === "production" ? "production" : "local")) as Lane;
 if (!LANES.includes(appEnv)) {
   throw new Error(`Invalid APP_ENV: ${process.env.APP_ENV}`);
 }
 const laneFile = resolve(process.cwd(), `.env.${appEnv}`);
 if (existsSync(laneFile)) loadEnvFile({ path: laneFile, override: true });
+
+const isProd = process.env.NODE_ENV === "production";
 
 if (isProd) {
   for (const name of ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"]) {
