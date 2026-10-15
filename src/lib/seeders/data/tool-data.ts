@@ -1,4 +1,4 @@
-import type { ToolCategory, ToolType } from "../../enums";
+import type { ToolCategory, ToolType } from "../../enums.js";
 
 export type ToolSeedEntry = {
   name: string;

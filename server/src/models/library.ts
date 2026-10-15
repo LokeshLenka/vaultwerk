@@ -43,6 +43,8 @@ const toolSchema = new Schema<ToolDoc>(
 );
 // One user can save a URL only once — the duplicate guard, enforced by the DB.
 toolSchema.index({ ownerId: 1, normalizedUrl: 1 }, { unique: true });
+// Newest-first library listing per account.
+toolSchema.index({ ownerId: 1, createdAt: -1 });
 // Server-side full-text search across the library.
 toolSchema.index({
   name: "text",
@@ -73,6 +75,7 @@ const collectionSchema = new Schema<CollectionDoc>(
   },
   { timestamps: true },
 );
+collectionSchema.index({ ownerId: 1, updatedAt: -1 });
 withClientShape(collectionSchema);
 export const Collection = model<CollectionDoc>("Collection", collectionSchema);
 

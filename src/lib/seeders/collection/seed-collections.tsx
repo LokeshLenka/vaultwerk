@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SpinnerIcon } from "@phosphor-icons/react";
-import { seedCollections } from "./seed-collection";
+import { seedDemoLibrary } from "@/lib/services/demo-seed-service";
 
 type SeedCollectionsButtonProps = {
   onDone?: () => void | Promise<void>;
@@ -13,8 +14,15 @@ export function SeedCollectionsButton({ onDone }: SeedCollectionsButtonProps) {
   const handleSeed = async () => {
     try {
       setIsLoading(true);
-      await seedCollections({ count: 8, skipDuplicates: true });
+      const summary = await seedDemoLibrary({ includeCollections: true });
+      toast.success(
+        `Loaded ${summary.collectionsInserted} demo collections`,
+      );
       await onDone?.();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not load demo data",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -24,13 +32,12 @@ export function SeedCollectionsButton({ onDone }: SeedCollectionsButtonProps) {
     <Button
       type="button"
       variant="outline"
-      onClick={handleSeed}
+      onClick={() => void handleSeed()}
       disabled={isLoading}
       className="rounded-none"
     >
       {isLoading ? <SpinnerIcon className="mr-2 size-4 animate-spin" /> : null}
-      Seed collections
+      Load demo collections
     </Button>
   );
 }
-
