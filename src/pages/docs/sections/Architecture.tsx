@@ -3,7 +3,9 @@ const techStack = [
   { area: "Build", tech: "Vite 8" },
   { area: "Styling", tech: "Tailwind CSS 4 + CSS variables (OKLCH)" },
   { area: "UI Primitives", tech: "@base-ui/react (headless), shadcn/ui style" },
-  { area: "Database", tech: "Dexie.js 4 (IndexedDB wrapper)" },
+  { area: "API", tech: "Express 5 + Zod validation" },
+  { area: "Database", tech: "MongoDB Atlas (Mongoose ODM)" },
+  { area: "Auth", tech: "Clerk (legacy JWT + API keys as fallback)" },
   { area: "Routing", tech: "react-router-dom 7" },
   { area: "Icons", tech: "@phosphor-icons/react" },
   { area: "Notifications", tech: "sonner" },
@@ -13,10 +15,10 @@ const techStack = [
 
 const dataFlow = [
   { from: "User Action", arrow: "->", to: "React Component" },
-  { from: "React Component", arrow: "->", to: "Service Layer (lib/services)" },
-  { from: "Service Layer", arrow: "->", to: "Dexie.js (IndexedDB)" },
-  { from: "IndexedDB", arrow: "->", to: "Reactive Query (useLiveQuery)" },
-  { from: "Reactive Query", arrow: "->", to: "Component Re-render" },
+  { from: "React Component", arrow: "->", to: "Service Layer (HTTP, lib/services)" },
+  { from: "Service Layer", arrow: "->", to: "Express API (validation + ownership)" },
+  { from: "Express API", arrow: "->", to: "MongoDB Atlas (Mongoose models)" },
+  { from: "Mutation", arrow: "->", to: "Data-version bus -> Component Re-fetch" },
 ];
 
 export function ArchitectureSection() {
@@ -25,8 +27,10 @@ export function ArchitectureSection() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Architecture</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          VaultWerk is a purely client-side application. There is no backend
-          server, no database to provision, and no API to deploy.
+          VaultWerk is a client-server web app. The React SPA talks to a
+          hosted Express API; MongoDB Atlas holds every tool, collection,
+          and setting, scoped per account. Sign in from any browser and
+          your library is there.
         </p>
       </div>
 
@@ -69,23 +73,24 @@ export function ArchitectureSection() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Local-First Design</h2>
+        <h2 className="text-lg font-semibold">Cloud-Native Design</h2>
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          All application state lives in the browser's IndexedDB via Dexie.js.
-          This means:
+          All persistence lives server-side in MongoDB Atlas. This means:
         </p>
         <ul className="list-disc space-y-1 pl-5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          <li>Zero latency &mdash; no network requests for CRUD operations</li>
-          <li>Offline by default &mdash; works without internet</li>
-          <li>No accounts or authentication required</li>
+          <li>Available everywhere &mdash; sign in on any device, same library</li>
+          <li>Private by default &mdash; every row carries an ownerId and ownership checks 404 for strangers</li>
+          <li>No client trust &mdash; URL normalization, dedup, and site grouping run in the API behind a unique index</li>
           <li>
-            Live queries via <code className="rounded bg-muted px-1 font-mono text-xs">
-              dexie-react-hooks
+            Refresh via a data-version bus &mdash; mutating services call{" "}
+            <code className="rounded bg-muted px-1 font-mono text-xs">
+              notifyDataChanged()
             </code>{" "}
-            auto-subscribe to database changes
+            and subscribers re-fetch from the API
           </li>
           <li>
-            Schema migrations handled by Dexie versioning (currently v5)
+            Theme follows you &mdash; a <code className="rounded bg-muted px-1 font-mono text-xs">vw-theme</code> cookie
+            for instant first paint, mirrored to your account setting for cross-device sync. Nothing lives in browser storage.
           </li>
         </ul>
       </section>

@@ -4,9 +4,10 @@ export function SeedingSection() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Seeding</h1>
         <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          VaultWerk ships with a built-in mass seed system that populates the
-          database with real-world developer tools and themed collections for
-          testing and demo purposes.
+          VaultWerk ships with a server-side demo seeder that populates an
+          account with real-world developer tools and themed collections for
+          testing and demo purposes — one bulk request, not hundreds of
+          client calls.
         </p>
       </div>
 
@@ -44,25 +45,24 @@ export function SeedingSection() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">How it Works</h2>
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          The seeding pipeline works in two phases:
+          The seeding pipeline runs inside the API in three steps:
         </p>
         <ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
           <li>
-            <strong>Tools are inserted</strong> &mdash; Each tool template is
-            processed through the URL normalizer, duplicate checker, and
-            ToolFactory to create a full ToolRecord. URLs are normalized for
-            deduplication. Tools get randomized timestamps spread across the
-            last 180 days.
+            <strong>Tools are bulk-inserted</strong> &mdash; Templates are
+            shuffled, normalized, and checked against the account&apos;s
+            existing URLs in a single query; new rows go in with one{" "}
+            <code>insertMany</code>.
           </li>
           <li>
             <strong>Collections are populated</strong> &mdash; For each
-            collection template, its tags are matched against the tags of seeded
-            tools. Matching tools are automatically assigned to the collection.
-            If fewer than 2 tools match, random tools are picked as a fallback.
+            collection template, its tags are matched against the tags of
+            seeded tools. Matching tools are automatically assigned to the
+            collection.
           </li>
           <li>
-            <strong>Sites are synced</strong> &mdash; After tool insertion, the
-            site sync service auto-creates SiteRecord entries grouped by domain.
+            <strong>Sites are synced</strong> &mdash; After insertion, a
+            single site-sync pass rebuilds the domain-grouped sites layer.
           </li>
         </ol>
       </section>
@@ -71,31 +71,21 @@ export function SeedingSection() {
         <h2 className="text-lg font-semibold">Usage</h2>
         <div className="space-y-3 text-sm leading-6">
           <p className="text-zinc-600 dark:text-zinc-400">
-            Import and call the seed function from anywhere in the app:
+            From the app, the empty-state buttons call the gated endpoint:
           </p>
           <pre className="overflow-x-auto rounded-lg border bg-muted/30 p-4 font-mono text-xs leading-6">
-            <span className="text-blue-600 dark:text-blue-400">import</span>
-            {" { seedAllData } "}
-            <span className="text-blue-600 dark:text-blue-400">from</span>
-            {' "@/lib/seeders/massive-seed";'}
+            <span className="text-zinc-500">{"// One request seeds tools + collections (max 50, rate-limited)"}</span>
+            {"\n"}
+            <span className="text-blue-600 dark:text-blue-400">await</span>
+            {" seedDemoLibrary({ count: 25 });"}
             {"\n\n"}
-            <span className="text-zinc-500">// Seed everything (402 tools + 83 collections)</span>
-            {"\n"}
-            <span className="text-blue-600 dark:text-blue-400">await</span>
-            {" seedAllData();"}
-            {"\n\n"}
-            <span className="text-zinc-500">// With options</span>
-            {"\n"}
-            <span className="text-blue-600 dark:text-blue-400">await</span>
-            {" seedAllData({"}
-            {"\n  "}count: 200,
-            {"\n  "}clearExisting: true,
-            {"\n  "}skipDuplicates: true,
-            {"\n"});{"\n\n"}
-            <span className="text-zinc-500">// Clear all seeded data</span>
-            {"\n"}
-            <span className="text-blue-600 dark:text-blue-400">await</span>
-            {" clearAllSeedData();"}
+            <span className="text-zinc-500">{"// POST /api/seed/demo — disabled in production unless ALLOW_SEED=true"}</span>
+          </pre>
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Operators can seed an account from the server instead:
+          </p>
+          <pre className="overflow-x-auto rounded-lg border bg-muted/30 p-4 font-mono text-xs leading-6">
+            npm run server:seed -- --email you@example.com --count 25
           </pre>
         </div>
       </section>

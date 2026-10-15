@@ -13,16 +13,17 @@ const Phase1Content = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-semibold">
-              Web Application — Local-First MVP
+              Cloud Platform — Accounts, API & Sync
             </h3>
             <Badge className="h-5 rounded-sm border-none bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400 text-xs">
               In Progress
             </Badge>
           </div>
           <p className="text-muted-foreground text-sm">
-            A fully functional web app deployed on cloud. Zero backend cost. No
-            account required. Local-first via IndexedDB. Usable in under 30
-            seconds after landing.
+            The hosted VaultWerk: sign in from any browser and your library
+            is there. A hardened Express API on MongoDB Atlas holds every
+            tool, collection, and setting — no local database, nothing to
+            lose when you switch devices.
           </p>
         </div>
 
@@ -37,7 +38,7 @@ const Phase1Content = () => {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Deliverable
             </p>
-            <p className="text-sm font-semibold">Live web app</p>
+            <p className="text-sm font-semibold">Live cloud app</p>
           </div>
         </div>
 
@@ -46,30 +47,31 @@ const Phase1Content = () => {
           className="-mt-2 mb-0 w-full border-none"
           defaultValue={[]}
         >
-          <AccordionItem value="week 1" className="bg-transparent">
+          <AccordionItem value="week-1" className="bg-transparent">
             <AccordionTrigger className="px-0 hover:no-underline [&>svg]:size-6!">
               <div className="flex items-center gap-2">
                 <Badge className="h-6 rounded-sm border-none bg-muted text-muted-foreground text-xs font-medium">
                   Week 1
                 </Badge>
                 <span className="text-sm font-medium">
-                  Project Setup & Data Layer
+                  Cloud Accounts & Data Model
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="text-muted-foreground">
               <ul className="list-inside list-disc space-y-3 text-sm">
                 <li>
-                  Project scaffold — React 19 + TypeScript + Vite + Tailwind CSS
-                  + shadcn/ui
+                  Clerk authentication — email/password plus Google and
+                  GitHub OAuth, with MFA support
                 </li>
                 <li>
-                  Dexie.js IndexedDB schema — <code>tools</code>,{" "}
-                  <code>collections</code>, <code>settings</code> tables with
-                  full indexing
+                  MongoDB Atlas schema — <code>tools</code>,{" "}
+                  <code>collections</code>, <code>sites</code>,{" "}
+                  <code>settings</code> tables, every row scoped to its owner
                 </li>
                 <li>
-                  Zustand stores wired up for tools, collections, and UI state
+                  Legacy accounts link by email on first Clerk sign-in —
+                  nothing is lost in the move
                 </li>
               </ul>
             </AccordionContent>
@@ -82,7 +84,7 @@ const Phase1Content = () => {
                   Week 2
                 </Badge>
                 <span className="text-sm font-medium">
-                  URL Save Flow & Suggestions
+                  URL Save Flow & Metadata
                 </span>
               </div>
             </AccordionTrigger>
@@ -90,12 +92,11 @@ const Phase1Content = () => {
               <ul className="list-inside list-disc space-y-3 text-sm">
                 <li>Add tools by pasting a URL</li>
                 <li>
-                  Automatically fetch website title, description, favicon, and
-                  preview image
+                  Server-side metadata enrichment — title, description,
+                  favicon, and preview image
                 </li>
-                <li>Display a logo or icon when available</li>
-                <li>Generate tags automatically</li>
-                <li>Suggest a category for the tool</li>
+                <li>Duplicate detection enforced by a database unique index</li>
+                <li>Automatic tags and category suggestions</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -114,7 +115,7 @@ const Phase1Content = () => {
             <AccordionContent className="text-muted-foreground">
               <ul className="list-inside list-disc space-y-3 text-sm">
                 <li>
-                  Full-text Library search across name, description, tags,
+                  Full-text library search across name, description, tags,
                   category, and notes
                 </li>
                 <li>
@@ -136,7 +137,7 @@ const Phase1Content = () => {
                   Week 4
                 </Badge>
                 <span className="text-sm font-medium">
-                  Polish, Import/Export & Deploy
+                  Hardening, Import/Export & Deploy
                 </span>
               </div>
             </AccordionTrigger>
@@ -147,16 +148,16 @@ const Phase1Content = () => {
                   Tools (90+ days idle), Related Tools
                 </li>
                 <li>
-                  Export full library as portable JSON backup; export individual
-                  collections as JSON
+                  Export full library as portable JSON backup; import JSON
+                  backup + browser bookmark HTML with auto-categorization
                 </li>
                 <li>
-                  Import JSON backup + browser bookmark HTML file with
-                  auto-categorization
+                  Production hardening — rate limits, bounded page sizes,
+                  cross-site session cookies, request logging
                 </li>
                 <li>
-                  Deploy to cloud — zero config, auto-deploy on push.
-                  Open-source on GitHub under MIT license
+                  Deploy — SPA on Vercel, API container on Render/Fly,
+                  database on Atlas. Open-source on GitHub under MIT license
                 </li>
               </ul>
             </AccordionContent>

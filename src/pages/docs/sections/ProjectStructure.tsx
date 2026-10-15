@@ -15,7 +15,7 @@ const tree = [
   { depth: 2, name: "GlobalLoader.tsx", note: "Route transition loading indicator", dir: false },
   { depth: 2, name: "github-stars-button.tsx", note: "Live GitHub star count badge", dir: false },
   { depth: 1, name: "hooks/", note: "Custom React hooks", dir: true },
-  { depth: 2, name: "use-collections.ts", note: "Live query for all collections", dir: false },
+  { depth: 2, name: "use-collections.ts", note: "API-backed collections subscription", dir: false },
   { depth: 2, name: "use-mobile.ts", note: "Responsive mobile detection (<768px)", dir: false },
   { depth: 2, name: "use-pagination.ts", note: "Page-based pagination state", dir: false },
   { depth: 2, name: "use-popup-permission.ts", note: "Browser popup permission test", dir: false },
@@ -26,17 +26,18 @@ const tree = [
   { depth: 2, name: "MainLayout.tsx", note: "Public layout — Navbar + Outlet", dir: false },
   { depth: 2, name: "DashboardLayout.tsx", note: "App layout — Sidebar + Header + Outlet", dir: false },
   { depth: 1, name: "lib/", note: "Core application logic", dir: true },
-  { depth: 2, name: "db.ts", note: "Dexie database class with schema definitions", dir: false },
+  { depth: 2, name: "api/", note: "HTTP client, token provider, useApi hooks", dir: true },
+  { depth: 2, name: "auth/", note: "Auth context, Clerk bridge, session hooks", dir: true },
   { depth: 2, name: "enums.ts", note: "ToolCategory, ToolType, ToolSource, JobType, etc.", dir: false },
   { depth: 2, name: "utils.ts", note: "cn() — clsx + tailwind-merge helper", dir: false },
   { depth: 2, name: "telemetry.ts", note: "Analytics event tracking (POST /api/telemetry)", dir: false },
   { depth: 2, name: "browser-detection.ts", note: "Browser detect + popup unblocking instructions", dir: false },
   { depth: 2, name: "collections.ts", note: "Collection validation constants", dir: false },
-  { depth: 2, name: "factories/", note: "Record creation helpers (ToolFactory, CollectionFactory, etc.)", dir: true },
+  { depth: 2, name: "factories/", note: "Demo-data helpers (ToolFactory, CollectionFactory, etc.)", dir: true },
   { depth: 2, name: "helpers/", note: "URL normalization, relative date, auto-label", dir: true },
   { depth: 2, name: "queries/", note: "Tool query helpers (search, recent, forgotten, related)", dir: true },
-  { depth: 2, name: "seeders/", note: "Seed data (402 tools, 83 collections) + seed scripts", dir: true },
-  { depth: 2, name: "services/", note: "Business logic layer (tool, collection, site, job, settings services)", dir: true },
+  { depth: 2, name: "seeders/data/", note: "Curated demo datasets consumed by the server seeder", dir: true },
+  { depth: 2, name: "services/", note: "HTTP service layer (tool, collection, site, job, settings, demo-seed)", dir: true },
   { depth: 2, name: "types/", note: "TypeScript type definitions for all entities", dir: true },
   { depth: 1, name: "pages/", note: "Page components (one per route)", dir: true },
   { depth: 2, name: "collection/", note: "CollectionsPage + CollectionDetailsPage", dir: true },
@@ -111,9 +112,9 @@ export function ProjectStructureSection() {
           <div className="rounded-lg border p-4">
             <h3 className="text-sm font-medium">lib/</h3>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Core application logic: Dexie database schema, type definitions,
-              enums, service layer (CRUD for all 5 entities), query helpers,
-              factories, seeders, URL normalization, and telemetry.
+              Core application logic: HTTP service layer for all entities,
+              type definitions, enums, query helpers, demo datasets,
+              URL normalization, and telemetry.
             </p>
           </div>
 
@@ -122,6 +123,17 @@ export function ProjectStructureSection() {
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
               One subdirectory per route. Each page component composes feature
               components and hooks into a complete view.
+            </p>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <h3 className="text-sm font-medium">server/</h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Express API: routes per entity, Mongoose models, Clerk +
+              JWT/API-key auth middleware, Zod validation, site-sync and
+              metadata services, plus the demo seeder (seed/demo.ts, seed
+              CLI, and the gated POST /api/seed/demo endpoint). Ships as a
+              container (server/Dockerfile) against MongoDB Atlas.
             </p>
           </div>
         </div>

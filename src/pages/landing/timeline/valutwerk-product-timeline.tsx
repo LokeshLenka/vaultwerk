@@ -10,8 +10,8 @@ const ProductTimeline = ({ phases }: ProductTimelineProps) => {
           VaultWerk Roadmap
         </h2>
         <p className="text-muted-foreground text-xl">
-          Built in four phases, evolving from a local-first experience to cloud
-          sync, sharing, and community features.
+          Built in three phases, from a hosted cloud platform to sharing,
+          community discovery, and team workspaces.
         </p>
       </div>
 
