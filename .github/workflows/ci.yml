@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, preview]
   pull_request:
 
 jobs:
@@ -19,5 +19,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run server:typecheck
+      - name: No browser-storage regressions
+        # Cloud-first guard: persistence lives in Mongo via the API.
+        # Theme uses a cookie + server setting; nothing may use web storage.
+        # (theme-provider.tsx is exempt: it only migrates the legacy key once.)
+        run: |
+          ! rg -n "localStorage|sessionStorage|indexedDB|Dexie|dexie" src server/src --glob '!src/components/ui/theme-provider.tsx' || (echo "browser-storage reference found" && exit 1)
       - run: npm test
       - run: npm run build

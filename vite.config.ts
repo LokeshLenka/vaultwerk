@@ -37,7 +37,6 @@ export default defineConfig({
         manualChunks(id: string) {
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("recharts")) return "charts";
-          if (id.includes("dexie")) return "db";
           if (
             /node_modules\/(react|react-dom|react-router-dom|scheduler)\//.test(
               id,

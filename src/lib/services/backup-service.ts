@@ -46,7 +46,7 @@ export interface ImportSummary {
   jobs: number;
 }
 
-/** Restores a v1 (IndexedDB) or v2 (API) backup file into this account. */
+/** Restores a v1 (legacy) or v2 (API) backup file into this account. */
 export async function importBackup(file: File): Promise<ImportSummary> {
   let parsed: unknown;
   try {

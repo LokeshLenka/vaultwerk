@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 /**
- * Replaces Dexie's live queries. Mutating services call
- * `notifyDataChanged()` after writes; every `useDataVersion()` subscriber
- * re-fetches. Coarse-grained (whole-app refetch per write) but correct,
+ * Cloud-data refresh bus. Mutating services call `notifyDataChanged()`
+ * after writes; every `useDataVersion()` subscriber re-fetches from the
+ * API. Coarse-grained (whole-app refetch per write) but correct,
  * simple, and fine at VaultWerk's data scale.
  */
 
