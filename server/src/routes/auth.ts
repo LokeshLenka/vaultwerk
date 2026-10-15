@@ -17,7 +17,7 @@ const REFRESH_COOKIE = "vw_refresh";
 const refreshCookieOptions = {
   httpOnly: true,
   secure: config.isProd,
-  sameSite: "lax" as const,
+  sameSite: config.cookieSameSite,
   path: "/api/auth",
   maxAge: config.refreshTtlDays * 24 * 60 * 60 * 1000,
 };
@@ -80,7 +80,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { email, password } = req.body as { email: string; password: string };
     const user = await User.findOne({ email }).select("+passwordHash");
-    const valid = user && (await bcrypt.compare(password, user.passwordHash));
+    // Clerk-only accounts have no password hash — same 401, no oracle.
+    const valid =
+      user?.passwordHash && (await bcrypt.compare(password, user.passwordHash));
     if (!user || !valid) {
       throw new HttpError(401, "Invalid email or password");
     }
@@ -128,7 +130,12 @@ router.post(
         { revokedAt: new Date() },
       );
     }
-    res.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
+    res.clearCookie(REFRESH_COOKIE, {
+      path: "/api/auth",
+      httpOnly: true,
+      secure: config.isProd,
+      sameSite: config.cookieSameSite,
+    });
     res.status(204).end();
   }),
 );

@@ -11,10 +11,9 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Top-level crash guard. Local-first apps can hit unrecoverable states
- * (corrupt IndexedDB, failed Dexie migration, broken render after a bad
- * deploy with cached chunks) — without a boundary the user gets a blank
- * page with no recovery path. This renders an actionable fallback instead.
+ * Top-level crash guard. A failed render after a bad deploy with cached
+ * chunks (or a dropped API response mid-stream) would otherwise leave a
+ * blank page with no recovery path. This renders an actionable fallback.
  */
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,

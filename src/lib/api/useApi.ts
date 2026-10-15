@@ -3,9 +3,8 @@ import { useDataVersion } from "@/lib/data/events";
 
 /**
  * Fetches `fetcher()` on mount, on data mutations (see data/events), and
- * when `deps` change. Drop-in shape for the removed `useLiveQuery` calls:
- * `{ data, loading, error }` with a stable empty-array default available
- * via the `fallback` option.
+ * when `deps` change: `{ data, loading, error }` with a stable
+ * empty-array default available via the `fallback` option.
  */
 export function useApiList<T>(
   fetcher: () => Promise<T[]>,

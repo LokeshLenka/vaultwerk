@@ -1,14 +1,32 @@
 import { Navigate, useNavigate } from "react-router-dom";
+import { SignUp } from "@clerk/clerk-react";
 import { AuthCard, AuthFooterLink } from "@/components/auth/AuthCard";
 import { useAuth } from "@/lib/auth/useAuth";
 import { ApiError } from "@/lib/api/client";
 import SplitText from "@/components/SplitText";
+
+const clerkKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
+  | string
+  | undefined;
 
 export default function RegisterPage() {
   const { user, loading, register } = useAuth();
   const navigate = useNavigate();
 
   if (!loading && user) return <Navigate to="/dashboard" replace />;
+
+  if (clerkKey) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-6">
+        <SignUp
+          routing="path"
+          path="/register"
+          signInUrl="/login"
+          fallbackRedirectUrl="/dashboard"
+        />
+      </div>
+    );
+  }
 
   return (
     <AuthCard

@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { getTheme, setTheme as persistTheme } from "@/lib/services/settings-service";
 
 type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
-  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -20,14 +20,49 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+/**
+ * Cloud-first theme storage: a plain `vw-theme` cookie for instant
+ * first-paint (works on the marketing pages with no account), mirrored to
+ * the account's `theme` server setting when signed in so it follows the
+ * user across devices. Nothing is kept in localStorage.
+ */
+const THEME_COOKIE = "vw-theme";
+
+function readCookieTheme(): Theme | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${THEME_COOKIE}=`));
+  const value = match?.slice(THEME_COOKIE.length + 1);
+  if (value === "dark" || value === "light" || value === "system") {
+    return value;
+  }
+  // One-time migration off the legacy localStorage key, then drop it.
+  try {
+    const legacy = window.localStorage.getItem("vaultwerk-ui-theme");
+    if (legacy === "dark" || legacy === "light" || legacy === "system") {
+      writeCookieTheme(legacy);
+      window.localStorage.removeItem("vaultwerk-ui-theme");
+      return legacy;
+    }
+  } catch {
+    // Storage unavailable (private mode) — fall through to default.
+  }
+  return null;
+}
+
+function writeCookieTheme(theme: Theme) {
+  document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
+    () => readCookieTheme() ?? defaultTheme,
   );
 
   useEffect(() => {
@@ -48,11 +83,31 @@ export function ThemeProvider({
     root.classList.add(theme);
   }, [theme]);
 
+  // Signed-in users inherit the server-side preference (cross-device).
+  useEffect(() => {
+    let cancelled = false;
+    void getTheme()
+      .then((serverTheme) => {
+        if (!cancelled && serverTheme && serverTheme !== readCookieTheme()) {
+          writeCookieTheme(serverTheme);
+          setTheme(serverTheme);
+        }
+      })
+      .catch(() => {
+        // Anonymous or offline — the cookie value stands on its own.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: (next: Theme) => {
+      writeCookieTheme(next);
+      setTheme(next);
+      // Best-effort cross-device sync; anonymous users just keep the cookie.
+      void persistTheme(next).catch(() => undefined);
     },
   };
 

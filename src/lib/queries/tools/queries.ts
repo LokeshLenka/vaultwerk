@@ -3,7 +3,7 @@
  *
  * Read-focused utilities — duplicate lookup, recents, favorites,
  * forgotten tools, search, related discovery — served by the API's
- * Mongo indexes instead of IndexedDB cursors.
+ * Mongo indexes.
  */
 import { apiFetch } from "../../api/client";
 import type { ToolRecord } from "../../types/tool";

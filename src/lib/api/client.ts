@@ -1,10 +1,12 @@
 /**
  * HTTP client for the VaultWerk API.
  *
- * Auth model: short-lived JWT access tokens live only in memory (never
- * localStorage — XSS can't steal what isn't persisted). A rotating
- * httpOnly refresh cookie renews them silently; on renewal failure the
- * session is dead and the caller is redirected to /login.
+ * Auth model: the Authorization header carries either a Clerk session
+ * token (cloud auth, supplied per-request by the token provider) or a
+ * short-lived legacy JWT kept only in memory (never persisted to web
+ * storage). Legacy sessions renew via a rotating httpOnly refresh
+ * cookie; on renewal failure the session is dead and the caller is
+ * redirected to /login.
  */
 
 const BASE = import.meta.env.VITE_API_URL ?? "";
@@ -12,8 +14,15 @@ const BASE = import.meta.env.VITE_API_URL ?? "";
 let accessToken: string | null = null;
 let refreshInFlight: Promise<string> | null = null;
 
+/** Per-request token source (Clerk's `getToken`). Cleared on sign-out. */
+let tokenProvider: (() => Promise<string | null>) | null = null;
+
 export function setAccessToken(token: string | null) {
   accessToken = token;
+}
+
+export function setTokenProvider(provider: (() => Promise<string | null>) | null) {
+  tokenProvider = provider;
 }
 
 export class ApiError extends Error {
@@ -61,7 +70,19 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  // Clerk tokens are fetched per request (they rotate); the legacy JWT
+  // is a stable in-memory value. Provider failures fail open to
+  // anonymous — the API 401s and callers handle it.
+  let token = accessToken;
+  if (!token && tokenProvider) {
+    try {
+      token = await tokenProvider();
+    } catch {
+      token = null;
+    }
+  }
+  const legacy = token !== null && token === accessToken && accessToken !== null;
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -70,7 +91,7 @@ export async function apiFetch<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401 && retry && accessToken !== null) {
+  if (res.status === 401 && retry && legacy) {
     try {
       await refreshAccessToken();
       return apiFetch<T>(path, {

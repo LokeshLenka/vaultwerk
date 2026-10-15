@@ -43,7 +43,9 @@ export const toolUpdateSchema = z
 export const toolsQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
   favorite: z.enum(["true", "false"]).optional(),
-  limit: z.coerce.number().int().min(1).max(500).optional(),
+  // Bounded page size: the dashboard re-fetches the whole list per
+  // mutation, so an unbounded limit is a shared-host DoS vector.
+  limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 
 export const collectionCreateSchema = z.object({
@@ -84,7 +86,7 @@ export const jobUpdateSchema = z
 
 export const jobsQuerySchema = z.object({
   status: z.enum(["queued", "running", "done", "failed"]).optional(),
-  limit: z.coerce.number().int().min(1).max(500).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 
 export const apiKeyCreateSchema = z.object({

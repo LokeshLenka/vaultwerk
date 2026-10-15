@@ -23,7 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+.env
 .env*.local
+.env.preview
+.env.production
 
 # Session / draft files
 session-*.md
@@ -34,3 +37,7 @@ graphify-out/
 
 # opencode skills / config
 .opencode/
+
+# mongodb
+preview-atlas-credentials.env
+production-atlas-credentials.env

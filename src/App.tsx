@@ -24,7 +24,7 @@ import { Analytics } from "@vercel/analytics/react";
 // import { DocsPage } from "./pages/docs/DocsPage";
 
 // Dashboard routes are code-split: the library/collections/sites views pull
-// in Dexie live queries, tables and dialogs that the landing page never needs.
+// in tables and dialogs that the landing page never needs.
 const LibraryPage = lazy(() => import("./pages/tool/Library"));
 const CollectionsPage = lazy(() =>
   import("./pages/collection/CollectionsPage").then((m) => ({

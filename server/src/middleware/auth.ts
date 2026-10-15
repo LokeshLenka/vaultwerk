@@ -27,10 +27,9 @@ function bearerToken(req: Request): string | null {
 }
 
 /**
- * Authenticates via short-lived JWT **or** a long-lived `vwk_` API key.
- * Attaches `req.user`; API-key calls are scoped to the key owner exactly
- * like password sessions (ownership checks downstream don't care how
- * the user authenticated).
+ * Authenticates via Clerk session token (cloud auth), short-lived JWT,
+ * or a long-lived `vwk_` API key. Attaches `req.user`; downstream
+ * ownership checks don't care how the user authenticated.
  */
 export async function authenticate(
   req: Request,
@@ -40,6 +39,21 @@ export async function authenticate(
   const token = bearerToken(req);
   if (!token) {
     return next(new HttpError(401, "Authentication required"));
+  }
+
+  // Clerk session tokens are tried first when the server is configured
+  // for Clerk; API keys take their own path below.
+  if (!token.startsWith("vwk_")) {
+    try {
+      const { userFromClerk } = await import("../auth/clerk.js");
+      const clerkUser = await userFromClerk(req);
+      if (clerkUser) {
+        req.user = clerkUser;
+        return next();
+      }
+    } catch {
+      return next(new HttpError(401, "Invalid or expired session"));
+    }
   }
 
   if (!token.startsWith("vwk_")) {

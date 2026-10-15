@@ -1,5 +1,6 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { clerkMiddleware } from "@clerk/express";
 import express, {
   type NextFunction,
   type Request,
@@ -16,22 +17,51 @@ import authRoutes from "./routes/auth.js";
 import backupRoutes from "./routes/backup.js";
 import collectionRoutes from "./routes/collections.js";
 import jobRoutes from "./routes/jobs.js";
+import seedRoutes from "./seed/routes.js";
 import settingRoutes from "./routes/settings.js";
 import siteRoutes from "./routes/sites.js";
 import toolRoutes from "./routes/tools.js";
 
 export function createApp() {
   const app = express();
+  // Behind Render/Fly/Railway TLS terminators so secure cookies + IPs work.
+  app.set("trust proxy", 1);
 
   app.use(helmet());
   app.use(
     cors({
-      origin: config.clientUrl,
+      // Cloud deploys serve the SPA from Vercel/custom domains while the
+      // API runs on a host like Render/Fly — allow the configured list.
+      origin: config.clientUrls,
       credentials: true,
     }),
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
+
+  // Liveness probe stays dependency-free: monitoring must work even when
+  // Clerk or Mongo are down, so it runs before any of that middleware.
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      ok: true,
+      db: dbState(),
+      env: config.env,
+      version: process.env.APP_VERSION ?? "dev",
+      time: new Date().toISOString(),
+    });
+  });
+
+  // Clerk session verification for API requests. Mounted only when both
+  // Clerk keys are set; otherwise the legacy JWT flow applies. Keys are
+  // passed explicitly so server envs don't depend on Vite's VITE_ names.
+  if (config.clerkSecretKey && config.clerkPublishableKey) {
+    app.use(
+      clerkMiddleware({
+        secretKey: config.clerkSecretKey,
+        publishableKey: config.clerkPublishableKey,
+      }),
+    );
+  }
 
   // Minimal request log (no morgan dependency).
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -57,16 +87,13 @@ export function createApp() {
     message: { error: "Rate limit exceeded — try again later" },
   });
 
-  app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, db: dbState(), time: new Date().toISOString() });
-  });
-
   app.use("/api/auth", authLimiter, authRoutes);
   app.use("/api/tools", apiLimiter, toolRoutes);
   app.use("/api/collections", apiLimiter, collectionRoutes);
   app.use("/api/sites", apiLimiter, siteRoutes);
   app.use("/api/settings", apiLimiter, settingRoutes);
   app.use("/api/jobs", apiLimiter, jobRoutes);
+  app.use("/api/seed", seedRoutes);
   app.use("/api/keys", apiLimiter, apiKeyRoutes);
   app.use("/api/backup", apiLimiter, backupRoutes);
   app.use("/api/admin", apiLimiter, adminRoutes);

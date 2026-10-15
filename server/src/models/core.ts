@@ -6,7 +6,9 @@ export type Role = "user" | "admin";
 export interface UserDoc {
   name: string;
   email: string;
-  passwordHash: string;
+  // Null for Clerk-only accounts that never set a password.
+  passwordHash: string | null;
+  clerkId: string | null;
   role: Role;
   createdAt: Date;
   updatedAt: Date;
@@ -23,7 +25,10 @@ const userSchema = new Schema<UserDoc>(
       trim: true,
       index: true,
     },
-    passwordHash: { type: String, required: true, select: false },
+    passwordHash: { type: String, required: false, select: false, default: null },
+    // Linked on first Clerk-authenticated request (email-matched when a
+    // legacy password account already exists). Null for password-only users.
+    clerkId: { type: String, default: null, unique: true, sparse: true, index: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
   },
   { timestamps: true },

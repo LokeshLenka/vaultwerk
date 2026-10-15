@@ -1,9 +1,8 @@
 /**
  * Tool service — HTTP implementation backed by MongoDB.
  *
- * Same exported contract as the former Dexie version: URL normalization,
- * duplicate prevention, and site-grouping maintenance now happen
- * server-side so they can't be bypassed by a client.
+ * URL normalization, duplicate prevention, and site-grouping maintenance
+ * happen server-side so they can't be bypassed by a client.
  */
 
 import { apiFetch } from "../api/client";

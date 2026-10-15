@@ -14,7 +14,9 @@ async function main() {
 
   const app = createApp();
   app.listen(config.port, () => {
-    console.log(`[api] VaultWerk API listening on :${config.port}`);
+    console.log(
+      `[api] VaultWerk API listening on :${config.port} (env=${config.env})`,
+    );
   });
 }
 
